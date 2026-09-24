@@ -23,6 +23,24 @@ function InstagramIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
+function TikTokIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+      <path d="M16.5 3c.4 2 1.8 3.6 3.8 3.9v2.7c-1.4 0-2.8-.4-3.8-1.2v6.4c0 3.1-2.5 5.2-5.3 5.2-2.9 0-5.3-2.3-5.3-5.2 0-2.9 2.4-5.2 5.3-5.2.4 0 .8 0 1.2.1v2.8a2.6 2.6 0 0 0-1.2-.3 2.5 2.5 0 1 0 2.5 2.5V3h2.8Z" />
+    </svg>
+  );
+}
+
+// Generic neighborhood/home glyph for Nextdoor (no brand icon shipped by lucide-react).
+function NextdoorIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} {...props}>
+      <path d="M3.5 10.5 12 4l8.5 6.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M5.5 9v9.5a1 1 0 0 0 1 1H9.5v-5h5v5h3a1 1 0 0 0 1-1V9" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function Footer() {
   const { t } = useLanguage();
   const year = new Date().getFullYear();
@@ -45,11 +63,36 @@ export function Footer() {
               <Phone size={15} /> (480) 712-9344
             </a>
             <div className="flex gap-3">
-              <a href="#" aria-label="Facebook" className="hover:text-white">
+              <a
+                href="https://www.facebook.com/sunvalleyscraps/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Facebook"
+                className="hover:text-white"
+              >
                 <FacebookIcon width={18} height={18} />
               </a>
+              {/* Instagram link pending business account identity verification. */}
               <a href="#" aria-label="Instagram" className="hover:text-white">
                 <InstagramIcon width={18} height={18} />
+              </a>
+              <a
+                href="https://www.tiktok.com/@sunvalleyscraps"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="TikTok"
+                className="hover:text-white"
+              >
+                <TikTokIcon width={18} height={18} />
+              </a>
+              <a
+                href="https://nextdoor.com/page/sun-valley-scraps-phoenix-az"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Nextdoor"
+                className="hover:text-white"
+              >
+                <NextdoorIcon width={18} height={18} />
               </a>
             </div>
           </div>
