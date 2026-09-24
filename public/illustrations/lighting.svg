@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <rect width="200" height="200" rx="24" fill="#3B2A20"/>
+  <!-- palm trunk -->
+  <path d="M100 170 C96 130 100 100 92 70" stroke="#8a5a3b" strokeWidth="8" fill="none"/>
+  <!-- fronds -->
+  <g stroke="#5C8A3A" strokeWidth="6" strokeLinecap="round">
+    <path d="M92 70 C70 55 50 55 35 65"/>
+    <path d="M92 70 C75 45 60 35 45 30"/>
+    <path d="M92 70 C95 40 90 25 85 15"/>
+    <path d="M92 70 C110 45 125 35 140 30"/>
+    <path d="M92 70 C115 55 135 55 150 65"/>
+  </g>
+  <!-- uplight glow -->
+  <ellipse cx="100" cy="170" rx="40" ry="10" fill="#F2A65A" opacity="0.5"/>
+  <polygon points="100,150 70,170 130,170" fill="#F2A65A" opacity="0.35"/>
+  <circle cx="100" cy="172" r="6" fill="#FBB03B"/>
+</svg>

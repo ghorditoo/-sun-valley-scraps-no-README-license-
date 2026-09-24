@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <rect width="200" height="200" rx="24" fill="#F7D9A6"/>
+  <circle cx="150" cy="45" r="20" fill="#F2A65A"/>
+  <ellipse cx="100" cy="175" rx="80" ry="14" fill="#D9A066"/>
+  <!-- saguaro -->
+  <g fill="#5C8A3A">
+    <rect x="92" y="70" width="16" height="100" rx="8"/>
+    <rect x="68" y="100" width="14" height="50" rx="7"/>
+    <rect x="118" y="90" width="14" height="60" rx="7"/>
+    <path d="M75 100c0-14 12-16 12-16v16Z"/>
+    <path d="M125 90c0-14 12-16 12-16v16Z"/>
+  </g>
+  <circle cx="60" cy="150" r="10" fill="#8a5a3b"/>
+  <circle cx="150" cy="155" r="14" fill="#8a5a3b"/>
+</svg>

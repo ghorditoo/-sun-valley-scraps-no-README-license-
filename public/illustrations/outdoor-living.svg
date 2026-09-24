@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <rect width="200" height="200" rx="24" fill="#FCE3CE"/>
+  <!-- pergola -->
+  <g stroke="#8a5a3b" strokeWidth="5" strokeLinecap="round">
+    <line x1="40" y1="60" x2="40" y2="120"/>
+    <line x1="160" y1="60" x2="160" y2="120"/>
+    <line x1="30" y1="60" x2="170" y2="60"/>
+    <line x1="50" y1="52" x2="50" y2="68"/>
+    <line x1="80" y1="52" x2="80" y2="68"/>
+    <line x1="110" y1="52" x2="110" y2="68"/>
+    <line x1="140" y1="52" x2="140" y2="68"/>
+  </g>
+  <!-- fire pit -->
+  <ellipse cx="100" cy="150" rx="34" ry="10" fill="#8a5a3b"/>
+  <path d="M100 100c8 14-4 16-4 26 0 8 6 12 12 8 2 8-4 16-12 16-12 0-20-10-20-22 0-16 16-16 24-28Z" fill="#E9782E"/>
+  <path d="M100 116c4 8-2 10-2 16 0 5 4 7 7 5" fill="#FBB03B"/>
+</svg>

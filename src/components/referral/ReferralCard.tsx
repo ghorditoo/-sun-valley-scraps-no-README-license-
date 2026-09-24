@@ -68,21 +68,21 @@ export function ReferralCard() {
         </div>
 
         <div className="mt-10 grid grid-cols-1 gap-8 md:grid-cols-[1.1fr_0.9fr] md:items-center">
-          <div className="rounded-3xl bg-gradient-to-br from-emerald-700 to-emerald-900 p-6 shadow-2xl sm:p-8">
+          <div className="rounded-3xl bg-gradient-to-br from-amber-700 to-amber-900 p-6 shadow-2xl sm:p-8">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-emerald-200">{t.brand.name}</span>
-              <Gift size={22} className="text-emerald-200" />
+              <span className="text-sm font-medium text-amber-200">{t.brand.name}</span>
+              <Gift size={22} className="text-amber-200" />
             </div>
 
             <div className="mt-6 grid grid-cols-2 gap-4">
               <div>
-                <p className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-emerald-200">
+                <p className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-amber-200">
                   <Wallet size={13} /> {t.referral.pointsBalance}
                 </p>
                 <p className="mt-1 text-3xl font-bold">{data.pointsBalance.toLocaleString()}</p>
               </div>
               <div>
-                <p className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-emerald-200">
+                <p className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-amber-200">
                   <Users size={13} /> {t.referral.jobsReferred}
                 </p>
                 <p className="mt-1 text-3xl font-bold">{data.jobsReferred}</p>
@@ -90,7 +90,7 @@ export function ReferralCard() {
             </div>
 
             <div className="mt-6 rounded-xl bg-black/20 p-3">
-              <p className="text-xs uppercase tracking-wide text-emerald-200">{t.referral.yourCode}</p>
+              <p className="text-xs uppercase tracking-wide text-amber-200">{t.referral.yourCode}</p>
               <div className="mt-1 flex items-center justify-between gap-2">
                 <code className="truncate text-sm font-semibold">{data.referralLink}</code>
                 <button
@@ -106,7 +106,7 @@ export function ReferralCard() {
             <button
               onClick={handleApplyBalance}
               disabled={data.pointsBalance <= 0}
-              className="mt-6 w-full rounded-full bg-white py-3 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-40"
+              className="mt-6 w-full rounded-full bg-white py-3 text-sm font-semibold text-amber-800 transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {t.referral.applyBalance}
             </button>
@@ -117,7 +117,7 @@ export function ReferralCard() {
             <ol className="mt-4 space-y-4">
               {t.referral.steps.map((step, i) => (
                 <li key={step} className="flex gap-3">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-sm font-bold">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-700 text-sm font-bold">
                     {i + 1}
                   </span>
                   <p className="text-sm text-stone-300">{step}</p>

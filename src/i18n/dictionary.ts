@@ -10,6 +10,7 @@ export const dictionary = {
     },
     nav: {
       services: "Services",
+      catalog: "Full Catalog",
       gallery: "Before & After",
       visualizer: "Build Your Yard",
       referrals: "Referral Rewards",
@@ -132,6 +133,14 @@ export const dictionary = {
         "You both earn reward points automatically.",
       ],
     },
+    catalog: {
+      heading: "Everything We Build & Maintain",
+      subheading:
+        "From patios to putting greens, here's the full range of hardscaping, planting, lighting, and irrigation work our crew handles.",
+      viewServices: "View Services",
+      hideServices: "Hide Services",
+      photoNote: "Illustrated for now — real project photos coming soon.",
+    },
     footer: {
       rights: "All rights reserved.",
       familyOwned: "Family owned & operated since 1998.",
@@ -144,6 +153,7 @@ export const dictionary = {
     },
     nav: {
       services: "Servicios",
+      catalog: "Catálogo Completo",
       gallery: "Antes y Después",
       visualizer: "Diseña Tu Patio",
       referrals: "Recompensas por Referidos",
@@ -265,6 +275,14 @@ export const dictionary = {
         "Ellos reservan y completan un proyecto con nosotros.",
         "Ambos ganan puntos de recompensa automáticamente.",
       ],
+    },
+    catalog: {
+      heading: "Todo lo que Construimos y Mantenemos",
+      subheading:
+        "Desde patios hasta greens de golf, esta es la gama completa de construcción de exteriores, plantación, iluminación y riego que maneja nuestro equipo.",
+      viewServices: "Ver Servicios",
+      hideServices: "Ocultar Servicios",
+      photoNote: "Ilustrado por ahora — pronto fotos reales de proyectos.",
     },
     footer: {
       rights: "Todos los derechos reservados.",

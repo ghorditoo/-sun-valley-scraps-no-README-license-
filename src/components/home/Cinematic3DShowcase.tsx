@@ -50,7 +50,7 @@ export function Cinematic3DShowcase() {
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-bold sm:text-4xl">{t.showcase3d.heading}</h2>
           <p className="mt-3 text-stone-300">{t.showcase3d.subheading}</p>
-          <p className="mt-2 text-xs uppercase tracking-wide text-emerald-400">{t.showcase3d.hint}</p>
+          <p className="mt-2 text-xs uppercase tracking-wide text-amber-400">{t.showcase3d.hint}</p>
         </div>
       </div>
 
@@ -63,7 +63,7 @@ export function Cinematic3DShowcase() {
       <div className="mx-auto mt-4 max-w-7xl px-4 text-center sm:px-6 lg:px-8">
         <a
           href="#gallery-full"
-          className="inline-block text-sm font-semibold text-emerald-400 underline underline-offset-4 hover:text-emerald-300"
+          className="inline-block text-sm font-semibold text-amber-400 underline underline-offset-4 hover:text-amber-300"
         >
           {t.showcase3d.viewGallery}
         </a>

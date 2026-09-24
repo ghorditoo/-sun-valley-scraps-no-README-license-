@@ -1,5 +1,6 @@
 import { Hero } from "@/components/home/Hero";
 import { Services } from "@/components/home/Services";
+import { ServiceCatalog } from "@/components/home/ServiceCatalog";
 import { FeaturedProjects } from "@/components/home/FeaturedProjects";
 import { Cinematic3DShowcase } from "@/components/home/Cinematic3DShowcase";
 import { FullProjectGallery } from "@/components/home/FullProjectGallery";
@@ -12,6 +13,7 @@ export default function Home() {
     <>
       <Hero />
       <Services />
+      <ServiceCatalog />
       <FeaturedProjects />
       <Cinematic3DShowcase />
       <BeforeAfterGallery />

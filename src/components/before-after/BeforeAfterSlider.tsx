@@ -79,7 +79,7 @@ export function BeforeAfterSlider({ project }: { project: BeforeAfterProject }) 
         {/* After image (base layer) */}
         <div className="absolute inset-0">
           <ImageWithFallback src={project.afterSrc} alt={`${project.titleKey} - ${t.beforeAfter.after}`} />
-          <span className="absolute right-3 top-3 rounded-full bg-emerald-700/90 px-3 py-1 text-xs font-semibold text-white">
+          <span className="absolute right-3 top-3 rounded-full bg-amber-700/90 px-3 py-1 text-xs font-semibold text-white">
             {t.beforeAfter.after}
           </span>
         </div>

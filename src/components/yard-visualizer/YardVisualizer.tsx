@@ -150,7 +150,7 @@ export function YardVisualizer() {
   }
 
   return (
-    <section id="visualizer" className="bg-white py-16">
+    <section id="visualizer" className="bg-orange-50 py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-bold text-stone-900 sm:text-4xl">{t.visualizer.heading}</h2>
@@ -175,7 +175,7 @@ export function YardVisualizer() {
                     e.stopPropagation();
                     fileInputRef.current?.click();
                   }}
-                  className="flex h-full w-full flex-col items-center justify-center gap-3 text-stone-500 hover:text-emerald-700"
+                  className="flex h-full w-full flex-col items-center justify-center gap-3 text-stone-500 hover:text-amber-700"
                 >
                   <ImagePlus size={40} />
                   <span className="font-semibold">{t.visualizer.uploadCta}</span>
@@ -196,7 +196,7 @@ export function YardVisualizer() {
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1, rotate: item.rotationDeg }}
                     className={`group absolute flex items-center justify-center rounded-lg border-2 shadow-lg ${
-                      isSelected ? "border-emerald-500 ring-2 ring-emerald-400" : "border-white/80"
+                      isSelected ? "border-amber-500 ring-2 ring-amber-400" : "border-white/80"
                     }`}
                     style={{
                       left: `${item.xPct}%`,
@@ -301,7 +301,7 @@ export function YardVisualizer() {
                             onClick={() => setSelectedMaterialId(material.id)}
                             className={`flex shrink-0 flex-col items-center gap-1 rounded-xl border-2 p-2 transition ${
                               selectedMaterialId === material.id
-                                ? "border-emerald-600 bg-emerald-50"
+                                ? "border-amber-600 bg-amber-50"
                                 : "border-transparent bg-white hover:border-stone-300"
                             }`}
                           >
@@ -309,7 +309,7 @@ export function YardVisualizer() {
                             <span className="max-w-[80px] truncate text-[11px] text-stone-600">
                               {material.name}
                             </span>
-                            <span className="text-[11px] font-semibold text-emerald-700">
+                            <span className="text-[11px] font-semibold text-amber-700">
                               ${material.pricePerSqFt}/ft²
                             </span>
                           </button>
@@ -331,12 +331,12 @@ export function YardVisualizer() {
                 step={10}
                 value={areaSqFt}
                 onChange={(e) => setAreaSqFt(Number(e.target.value) || 0)}
-                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-emerald-600 focus:outline-none"
+                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-amber-600 focus:outline-none"
               />
             </div>
 
-            <div className="rounded-xl bg-emerald-700 p-4 text-white">
-              <p className="text-xs uppercase tracking-wide text-emerald-100">
+            <div className="rounded-xl bg-amber-700 p-4 text-white">
+              <p className="text-xs uppercase tracking-wide text-amber-100">
                 {t.visualizer.budgetTitle}
               </p>
               <p className="mt-1 text-3xl font-bold">
@@ -375,7 +375,7 @@ export function YardVisualizer() {
               <button
                 onClick={handleSendToBooking}
                 disabled={placedItems.length === 0}
-                className="flex items-center justify-center gap-2 rounded-full bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex items-center justify-center gap-2 rounded-full bg-amber-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-800 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Upload size={15} />
                 {t.visualizer.sendToBooking}

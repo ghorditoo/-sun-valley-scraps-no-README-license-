@@ -9,10 +9,10 @@ export function Hero() {
   const { openBooking } = useBooking();
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-emerald-50 to-stone-50">
+    <section className="relative overflow-hidden bg-gradient-to-b from-amber-100 via-orange-50 to-orange-50">
       <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
         <div className="mx-auto max-w-3xl text-center">
-          <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-emerald-700 shadow-sm">
+          <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-amber-700 shadow-sm">
             <ShieldCheck size={14} />
             {t.hero.trustBadge}
           </span>
@@ -25,14 +25,14 @@ export function Hero() {
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <button
               onClick={() => openBooking()}
-              className="flex items-center gap-2 rounded-full bg-emerald-700 px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-800"
+              className="flex items-center gap-2 rounded-full bg-amber-700 px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-amber-800"
             >
               {t.hero.ctaPrimary}
               <ArrowRight size={16} />
             </button>
             <a
               href="#gallery"
-              className="flex items-center gap-2 rounded-full border border-stone-300 bg-white px-6 py-3 text-sm font-semibold text-stone-700 transition hover:border-emerald-600 hover:text-emerald-700"
+              className="flex items-center gap-2 rounded-full border border-stone-300 bg-white px-6 py-3 text-sm font-semibold text-stone-700 transition hover:border-amber-600 hover:text-amber-700"
             >
               <Images size={16} />
               {t.hero.ctaSecondary}
