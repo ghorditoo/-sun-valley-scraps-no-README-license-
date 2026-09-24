@@ -7,6 +7,7 @@ export type PlacedMaterialItem = {
   xPct: number; // position as % of image width, for responsive placement
   yPct: number;
   widthPct: number;
+  rotationDeg: number;
 };
 
 export type YardPlan = {

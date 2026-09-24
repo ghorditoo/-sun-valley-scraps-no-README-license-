@@ -2,12 +2,24 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
-import { motion } from "framer-motion";
-import { Upload, Trash2, X, ImagePlus } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Upload,
+  Trash2,
+  X,
+  ImagePlus,
+  Minus,
+  Plus,
+  RotateCw,
+  Copy,
+  Undo2,
+  Box,
+} from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useBooking } from "@/components/booking/BookingContext";
 import { materials } from "@/data/materials";
 import type { Material, PlacedMaterialItem } from "@/lib/types";
+import { Yard3DPreviewModal } from "./Yard3DPreviewModal";
 
 const categories: Material["category"][] = ["pavers", "turf", "plants", "rock", "walls", "repairs", "minigolf"];
 
@@ -42,7 +54,24 @@ export function YardVisualizer() {
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
   const [selectedMaterialId, setSelectedMaterialId] = useState<string | null>(null);
   const [placedItems, setPlacedItems] = useState<PlacedMaterialItem[]>([]);
+  const [history, setHistory] = useState<PlacedMaterialItem[][]>([]);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [areaSqFt, setAreaSqFt] = useState(500);
+  const [show3DPreview, setShow3DPreview] = useState(false);
+
+  function commit(next: PlacedMaterialItem[]) {
+    setHistory((prev) => [...prev, placedItems]);
+    setPlacedItems(next);
+  }
+
+  function undo() {
+    setHistory((prev) => {
+      if (prev.length === 0) return prev;
+      const last = prev[prev.length - 1];
+      setPlacedItems(last);
+      return prev.slice(0, -1);
+    });
+  }
 
   function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -53,29 +82,51 @@ export function YardVisualizer() {
   }
 
   function handleCanvasClick(e: React.MouseEvent<HTMLDivElement>) {
+    if (selectedItemId) {
+      setSelectedItemId(null);
+      return;
+    }
     if (!selectedMaterialId || !canvasRef.current) return;
     const rect = canvasRef.current.getBoundingClientRect();
     const xPct = ((e.clientX - rect.left) / rect.width) * 100;
     const yPct = ((e.clientY - rect.top) / rect.height) * 100;
 
-    setPlacedItems((prev) => [
-      ...prev,
+    commit([
+      ...placedItems,
       {
         id: `${selectedMaterialId}-${Date.now()}`,
         materialId: selectedMaterialId,
         xPct: Math.min(92, Math.max(0, xPct)),
         yPct: Math.min(88, Math.max(0, yPct)),
         widthPct: 16,
+        rotationDeg: 0,
       },
     ]);
   }
 
+  function updateItem(id: string, patch: Partial<PlacedMaterialItem>) {
+    commit(placedItems.map((item) => (item.id === id ? { ...item, ...patch } : item)));
+  }
+
   function removeItem(id: string) {
-    setPlacedItems((prev) => prev.filter((item) => item.id !== id));
+    commit(placedItems.filter((item) => item.id !== id));
+    if (selectedItemId === id) setSelectedItemId(null);
+  }
+
+  function duplicateItem(item: PlacedMaterialItem) {
+    const clone: PlacedMaterialItem = {
+      ...item,
+      id: `${item.materialId}-${Date.now()}`,
+      xPct: Math.min(92, item.xPct + 6),
+      yPct: Math.min(88, item.yPct + 6),
+    };
+    commit([...placedItems, clone]);
+    setSelectedItemId(clone.id);
   }
 
   function clearPlan() {
-    setPlacedItems([]);
+    commit([]);
+    setSelectedItemId(null);
   }
 
   const estimatedTotal = placedItems.reduce((sum, item) => {
@@ -86,6 +137,7 @@ export function YardVisualizer() {
   }, 0);
 
   function handleSendToBooking() {
+    setShow3DPreview(false);
     openBooking({
       service: "redesign",
       yardPlan: {
@@ -100,15 +152,10 @@ export function YardVisualizer() {
   return (
     <section id="visualizer" className="bg-white py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="mx-auto max-w-2xl text-center"
-        >
+        <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-bold text-stone-900 sm:text-4xl">{t.visualizer.heading}</h2>
           <p className="mt-3 text-stone-600">{t.visualizer.subheading}</p>
-        </motion.div>
+        </div>
 
         <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]">
           {/* Canvas */}
@@ -139,6 +186,7 @@ export function YardVisualizer() {
               {placedItems.map((item) => {
                 const material = materials.find((m) => m.id === item.materialId);
                 if (!material) return null;
+                const isSelected = selectedItemId === item.id;
                 return (
                   <motion.div
                     key={item.id}
@@ -146,8 +194,10 @@ export function YardVisualizer() {
                     dragConstraints={canvasRef}
                     dragMomentum={false}
                     initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="group absolute flex items-center justify-center rounded-lg border-2 border-white/80 shadow-lg"
+                    animate={{ scale: 1, opacity: 1, rotate: item.rotationDeg }}
+                    className={`group absolute flex items-center justify-center rounded-lg border-2 shadow-lg ${
+                      isSelected ? "border-emerald-500 ring-2 ring-emerald-400" : "border-white/80"
+                    }`}
                     style={{
                       left: `${item.xPct}%`,
                       top: `${item.yPct}%`,
@@ -157,15 +207,65 @@ export function YardVisualizer() {
                       backgroundImage: `url(${material.thumbnail})`,
                       backgroundSize: "cover",
                     }}
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedItemId(item.id);
+                    }}
                   >
-                    <button
-                      onClick={() => removeItem(item.id)}
-                      className="absolute -right-2 -top-2 hidden h-6 w-6 items-center justify-center rounded-full bg-white text-stone-700 shadow group-hover:flex"
-                      aria-label={t.visualizer.removeItem}
-                    >
-                      <X size={14} />
-                    </button>
+                    {isSelected && (
+                      <div className="absolute -top-10 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full bg-stone-900/90 px-1.5 py-1 shadow-xl">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateItem(item.id, { widthPct: Math.max(6, item.widthPct - 3) });
+                          }}
+                          className="flex h-6 w-6 items-center justify-center rounded-full text-white hover:bg-white/20"
+                          aria-label={t.visualizer.resize}
+                        >
+                          <Minus size={13} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateItem(item.id, { widthPct: Math.min(45, item.widthPct + 3) });
+                          }}
+                          className="flex h-6 w-6 items-center justify-center rounded-full text-white hover:bg-white/20"
+                          aria-label={t.visualizer.resize}
+                        >
+                          <Plus size={13} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateItem(item.id, { rotationDeg: (item.rotationDeg + 45) % 360 });
+                          }}
+                          className="flex h-6 w-6 items-center justify-center rounded-full text-white hover:bg-white/20"
+                          aria-label={t.visualizer.rotate}
+                        >
+                          <RotateCw size={13} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            duplicateItem(item);
+                          }}
+                          className="flex h-6 w-6 items-center justify-center rounded-full text-white hover:bg-white/20"
+                          aria-label={t.visualizer.duplicate}
+                        >
+                          <Copy size={13} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeItem(item.id);
+                          }}
+                          className="flex h-6 w-6 items-center justify-center rounded-full text-white hover:bg-red-500/80"
+                          aria-label={t.visualizer.removeItem}
+                        >
+                          <X size={13} />
+                        </button>
+                      </div>
+                    )}
                   </motion.div>
                 );
               })}
@@ -180,7 +280,7 @@ export function YardVisualizer() {
             />
 
             {photoDataUrl && (
-              <p className="mt-2 text-xs text-stone-500">{t.visualizer.dropHint}</p>
+              <p className="mt-2 text-xs text-stone-500">{t.visualizer.selectHint}</p>
             )}
 
             {/* Material Dock */}
@@ -265,6 +365,14 @@ export function YardVisualizer() {
 
             <div className="mt-auto flex flex-col gap-2">
               <button
+                onClick={() => setShow3DPreview(true)}
+                disabled={placedItems.length === 0}
+                className="flex items-center justify-center gap-2 rounded-full bg-stone-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Box size={15} />
+                {t.visualizer.preview3d}
+              </button>
+              <button
                 onClick={handleSendToBooking}
                 disabled={placedItems.length === 0}
                 className="flex items-center justify-center gap-2 rounded-full bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-40"
@@ -272,16 +380,38 @@ export function YardVisualizer() {
                 <Upload size={15} />
                 {t.visualizer.sendToBooking}
               </button>
-              <button
-                onClick={clearPlan}
-                className="rounded-full border border-stone-300 px-4 py-2.5 text-sm font-medium text-stone-600 hover:border-red-400 hover:text-red-600"
-              >
-                {t.visualizer.clearPlan}
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={undo}
+                  disabled={history.length === 0}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-full border border-stone-300 px-4 py-2 text-sm font-medium text-stone-600 hover:border-stone-400 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <Undo2 size={14} />
+                  {t.visualizer.undo}
+                </button>
+                <button
+                  onClick={clearPlan}
+                  className="flex-1 rounded-full border border-stone-300 px-4 py-2 text-sm font-medium text-stone-600 hover:border-red-400 hover:text-red-600"
+                >
+                  {t.visualizer.clearPlan}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {show3DPreview && (
+          <Yard3DPreviewModal
+            photoDataUrl={photoDataUrl}
+            placedItems={placedItems}
+            onClose={() => setShow3DPreview(false)}
+            onSendToBooking={handleSendToBooking}
+          />
+        )}
+      </AnimatePresence>
     </section>
   );
 }
+

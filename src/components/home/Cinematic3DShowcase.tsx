@@ -1,40 +1,17 @@
 "use client";
 
-import { useRef } from "react";
 import Image from "next/image";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { motion, useTransform } from "framer-motion";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { showcasePhotos } from "@/data/showcasePhotos";
+import { useTilt3D } from "@/lib/useTilt3D";
 
 // A curated subset keeps the 3D tilt row fast; the rest live in the full gallery below.
 const CURATED_COUNT = 9;
 
-function TiltCard({ src, index }: { src: string; index: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-
-  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [12, -12]), {
-    stiffness: 200,
-    damping: 20,
-  });
-  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-12, 12]), {
-    stiffness: 200,
-    damping: 20,
-  });
-  const glareX = useTransform(mouseX, [-0.5, 0.5], ["0%", "100%"]);
-
-  function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
-    const rect = ref.current?.getBoundingClientRect();
-    if (!rect) return;
-    mouseX.set((e.clientX - rect.left) / rect.width - 0.5);
-    mouseY.set((e.clientY - rect.top) / rect.height - 0.5);
-  }
-
-  function handleMouseLeave() {
-    mouseX.set(0);
-    mouseY.set(0);
-  }
+function TiltCard({ src }: { src: string; index: number }) {
+  const { ref, rotateX, rotateY, handleMouseMove, handleMouseLeave } = useTilt3D();
+  const glareX = useTransform(rotateY, [-12, 12], ["0%", "100%"]);
 
   return (
     <div style={{ perspective: 1000 }} className="w-64 shrink-0 snap-center sm:w-72">
