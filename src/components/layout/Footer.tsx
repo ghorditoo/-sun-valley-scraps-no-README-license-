@@ -41,8 +41,8 @@ export function Footer() {
           </div>
 
           <div className="flex flex-col gap-2 text-sm">
-            <a href="tel:+15555550123" className="flex items-center gap-2 hover:text-white">
-              <Phone size={15} /> (555) 555-0123
+            <a href="tel:+14807129344" className="flex items-center gap-2 hover:text-white">
+              <Phone size={15} /> (480) 712-9344
             </a>
             <div className="flex gap-3">
               <a href="#" aria-label="Facebook" className="hover:text-white">
