@@ -1,0 +1,135 @@
+// Prisma schema for the Rivera & Sons Landscaping platform.
+// Run `npx prisma migrate dev` after configuring DATABASE_URL in .env to create these tables.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ServiceType {
+  PAVERS
+  TURF
+  DRAINAGE
+  REDESIGN
+  MAINTENANCE
+}
+
+enum VisitType {
+  SITE
+  VIRTUAL
+}
+
+enum BookingStatus {
+  PENDING_DEPOSIT
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentPurpose {
+  CONSULTATION_DEPOSIT
+  MILESTONE
+  MAINTENANCE_AUTOPAY
+}
+
+enum PaymentStatus {
+  REQUIRES_ACTION
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+enum ReferralStatus {
+  PENDING
+  JOB_COMPLETED
+  REWARDED
+}
+
+model Client {
+  id                String   @id @default(cuid())
+  name              String
+  email             String   @unique
+  phone             String?
+  stripeCustomerId  String?  @unique
+  referralCode      String   @unique @default(cuid())
+  pointsBalance     Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  bookings          Booking[]
+  payments          Payment[]
+  referralsSent     Referral[]      @relation("ReferrerClient")
+  referralReceived  Referral?       @relation("ReferredClient")
+  pointsLedger      PointsLedger[]
+}
+
+model Booking {
+  id            String        @id @default(cuid())
+  client        Client        @relation(fields: [clientId], references: [id])
+  clientId      String
+  service       ServiceType
+  visitType     VisitType
+  scheduledDate DateTime
+  timeSlot      String
+  address       String
+  notes         String?
+  photoUrls     String[]      @default([])
+  yardPlanJson  Json?         // snapshot of the "Build Your Yard" configuration
+  status        BookingStatus @default(PENDING_DEPOSIT)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  payments      Payment[]
+  referral      Referral?     @relation("CompletedJobReferral")
+}
+
+model Payment {
+  id                    String         @id @default(cuid())
+  client                Client         @relation(fields: [clientId], references: [id])
+  clientId              String
+  booking               Booking?       @relation(fields: [bookingId], references: [id])
+  bookingId             String?
+  stripePaymentIntentId String?        @unique
+  purpose               PaymentPurpose
+  amountCents           Int
+  status                PaymentStatus  @default(REQUIRES_ACTION)
+  createdAt             DateTime       @default(now())
+}
+
+model MaintenanceSubscription {
+  id                     String   @id @default(cuid())
+  clientId               String
+  stripeSubscriptionId   String   @unique
+  stripePriceId          String
+  frequency              String   // e.g. "monthly", "biweekly"
+  active                 Boolean  @default(true)
+  createdAt              DateTime @default(now())
+}
+
+model Referral {
+  id               String         @id @default(cuid())
+  referrer         Client         @relation("ReferrerClient", fields: [referrerId], references: [id])
+  referrerId       String
+  referredClient   Client         @relation("ReferredClient", fields: [referredClientId], references: [id])
+  referredClientId String         @unique
+  completedBooking Booking?       @relation("CompletedJobReferral", fields: [completedBookingId], references: [id])
+  completedBookingId String?      @unique
+  status           ReferralStatus @default(PENDING)
+  pointsAwarded    Int            @default(0)
+  createdAt        DateTime       @default(now())
+  rewardedAt       DateTime?
+}
+
+model PointsLedger {
+  id        String   @id @default(cuid())
+  client    Client   @relation(fields: [clientId], references: [id])
+  clientId  String
+  delta     Int      // positive = earned, negative = redeemed
+  reason    String   // "referral_reward" | "redeemed_on_booking" | "signup_bonus"
+  bookingId String?
+  createdAt DateTime @default(now())
+}

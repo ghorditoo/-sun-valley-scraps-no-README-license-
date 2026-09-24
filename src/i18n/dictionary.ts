@@ -1,0 +1,258 @@
+// Central bilingual copy dictionary. Add new keys here and both locales stay in sync via TS typing.
+export const locales = ["en", "es"] as const;
+export type Locale = (typeof locales)[number];
+
+export const dictionary = {
+  en: {
+    brand: {
+      name: "Sun Valley Scraps",
+      tagline: "Family-Owned. Hand-Built. Rooted in the Sun Valley Community.",
+    },
+    nav: {
+      services: "Services",
+      gallery: "Before & After",
+      visualizer: "Build Your Yard",
+      referrals: "Referral Rewards",
+      contact: "Contact",
+      bookNow: "Book Free Consultation",
+    },
+    hero: {
+      title: "Transforming Yards Into Legacies, One Family at a Time",
+      subtitle:
+        "Three generations of craftsmanship in pavers, hardscaping, turf, and drainage — trusted by your neighbors since 1998.",
+      ctaPrimary: "Schedule a Consultation",
+      ctaSecondary: "See Before & After",
+      trustBadge: "Locally Owned & Operated",
+    },
+    beforeAfter: {
+      heading: "See the Transformation",
+      subheading: "Drag the slider to reveal the craftsmanship behind every project.",
+      before: "Before",
+      after: "After",
+      dragHint: "Drag to compare",
+    },
+    featured: {
+      heading: "Recent Sun Valley Projects",
+      subheading: "A few real backyards our family crew has built and finished.",
+      projects: {
+        puttingGreen: "Backyard Putting Green & Lounge",
+        poolTurf: "Pool Deck Turf & Travertine Pavers",
+        project3: "Custom Outdoor Living Space",
+      },
+    },
+    showcase3d: {
+      heading: "Visualize the Finished Work",
+      subheading:
+        "Tilt, hover, and scroll through real completed projects rendered in an interactive 3D showcase — so you can picture the craftsmanship in your own yard.",
+      hint: "Move your mouse over a photo to tilt it",
+      viewGallery: "View Full Project Gallery",
+    },
+    visualizer: {
+      heading: "Build Your Yard",
+      subheading:
+        "Upload a photo of your space, then drag and drop real materials to design your dream yard and get an instant estimate.",
+      uploadCta: "Upload Your Yard Photo",
+      uploadHint: "JPG or PNG, max 10MB",
+      dockTitle: "Material Dock",
+      categories: {
+        pavers: "Modern Pavers",
+        turf: "Artificial Turf",
+        plants: "Native Plant Beds",
+        rock: "River Rock",
+        walls: "Retaining Walls",
+        repairs: "Repairs & Patchwork",
+        minigolf: "Mini Golf Setups",
+      },
+      areaLabel: "Estimated Area (sq ft)",
+      budgetTitle: "Estimated Project Budget",
+      clearPlan: "Clear Plan",
+      sendToBooking: "Send Plan to Booking",
+      itemsPlaced: "Items Placed",
+      removeItem: "Remove",
+      dropHint: "Click a material, then click on your photo to place it",
+    },
+    booking: {
+      heading: "Schedule Your Project",
+      subheading: "Book a free site visit or virtual consultation in under 2 minutes.",
+      steps: {
+        service: "Service",
+        schedule: "Schedule",
+        details: "Your Details",
+        payment: "Confirm & Deposit",
+      },
+      services: {
+        pavers: "Pavers & Hardscaping",
+        turf: "Artificial Turf",
+        drainage: "Drainage Solutions",
+        redesign: "Full Yard Redesign",
+        maintenance: "Recurring Maintenance",
+      },
+      visitType: {
+        site: "In-Person Site Visit",
+        virtual: "Virtual Consultation",
+      },
+      dateLabel: "Preferred Date",
+      timeLabel: "Preferred Time",
+      nameLabel: "Full Name",
+      emailLabel: "Email",
+      phoneLabel: "Phone",
+      addressLabel: "Property Address",
+      photoLabel: "Upload Yard Photos (optional)",
+      notesLabel: "Project Notes",
+      depositNotice:
+        "A refundable $49 consultation deposit secures your appointment and is credited toward your project.",
+      payDeposit: "Pay Deposit & Confirm Booking",
+      back: "Back",
+      next: "Continue",
+      successTitle: "You're Booked!",
+      successBody: "Confirmation sent to your email. We'll see you soon.",
+    },
+    referral: {
+      heading: "Referral & Loyalty Rewards",
+      subheading: "Share your link, earn points, and apply them straight to your next service.",
+      pointsBalance: "Points Balance",
+      jobsReferred: "Jobs Referred",
+      yourCode: "Your Referral Code",
+      copyLink: "Copy Link",
+      copied: "Copied!",
+      applyBalance: "Apply Balance to Next Service",
+      howItWorks: "How It Works",
+      steps: [
+        "Share your unique referral link with friends & neighbors.",
+        "They book and complete a project with us.",
+        "You both earn reward points automatically.",
+      ],
+    },
+    footer: {
+      rights: "All rights reserved.",
+      familyOwned: "Family owned & operated since 1998.",
+    },
+  },
+  es: {
+    brand: {
+      name: "Sun Valley Scraps",
+      tagline: "Negocio Familiar. Hecho a Mano. Arraigado en la Comunidad de Sun Valley.",
+    },
+    nav: {
+      services: "Servicios",
+      gallery: "Antes y Después",
+      visualizer: "Diseña Tu Patio",
+      referrals: "Recompensas por Referidos",
+      contact: "Contacto",
+      bookNow: "Agenda Consulta Gratis",
+    },
+    hero: {
+      title: "Transformamos Patios en Legados, Familia por Familia",
+      subtitle:
+        "Tres generaciones de artesanía en adoquines, muros, césped sintético y drenaje — la confianza de tu vecindario desde 1998.",
+      ctaPrimary: "Agenda una Consulta",
+      ctaSecondary: "Ver Antes y Después",
+      trustBadge: "Negocio Local Propio",
+    },
+    beforeAfter: {
+      heading: "Mira la Transformación",
+      subheading: "Arrastra el control para revelar la artesanía detrás de cada proyecto.",
+      before: "Antes",
+      after: "Después",
+      dragHint: "Arrastra para comparar",
+    },
+    featured: {
+      heading: "Proyectos Recientes en Sun Valley",
+      subheading: "Algunos patios reales que nuestro equipo familiar ha construido y terminado.",
+      projects: {
+        puttingGreen: "Green de Golf y Área de Descanso en el Patio",
+        poolTurf: "Césped y Adoquines de Travertino en Terraza de Piscina",
+        project3: "Espacio Exterior Personalizado",
+      },
+    },
+    showcase3d: {
+      heading: "Visualiza el Trabajo Terminado",
+      subheading:
+        "Inclina, pasa el mouse y navega por proyectos reales terminados en una vitrina interactiva en 3D, para que imagines la artesanía en tu propio patio.",
+      hint: "Mueve el mouse sobre una foto para inclinarla",
+      viewGallery: "Ver Galería Completa de Proyectos",
+    },
+    visualizer: {
+      heading: "Diseña Tu Patio",
+      subheading:
+        "Sube una foto de tu espacio, luego arrastra materiales reales para diseñar el patio de tus sueños y obtén un estimado al instante.",
+      uploadCta: "Sube la Foto de Tu Patio",
+      uploadHint: "JPG o PNG, máx 10MB",
+      dockTitle: "Materiales Disponibles",
+      categories: {
+        pavers: "Adoquines Modernos",
+        turf: "Césped Artificial",
+        plants: "Jardines de Plantas Nativas",
+        rock: "Piedra de Río",
+        walls: "Muros de Contención",
+        repairs: "Reparaciones y Parches",
+        minigolf: "Instalaciones de Mini Golf",
+      },
+      areaLabel: "Área Estimada (pies²)",
+      budgetTitle: "Presupuesto Estimado del Proyecto",
+      clearPlan: "Borrar Diseño",
+      sendToBooking: "Enviar Diseño a la Reserva",
+      itemsPlaced: "Elementos Colocados",
+      removeItem: "Quitar",
+      dropHint: "Haz clic en un material y luego en tu foto para colocarlo",
+    },
+    booking: {
+      heading: "Agenda Tu Proyecto",
+      subheading: "Reserva una visita gratis o una consulta virtual en menos de 2 minutos.",
+      steps: {
+        service: "Servicio",
+        schedule: "Horario",
+        details: "Tus Datos",
+        payment: "Confirmar y Depósito",
+      },
+      services: {
+        pavers: "Adoquines y Muros",
+        turf: "Césped Artificial",
+        drainage: "Soluciones de Drenaje",
+        redesign: "Rediseño Completo del Patio",
+        maintenance: "Mantenimiento Recurrente",
+      },
+      visitType: {
+        site: "Visita en Persona",
+        virtual: "Consulta Virtual",
+      },
+      dateLabel: "Fecha Preferida",
+      timeLabel: "Hora Preferida",
+      nameLabel: "Nombre Completo",
+      emailLabel: "Correo Electrónico",
+      phoneLabel: "Teléfono",
+      addressLabel: "Dirección de la Propiedad",
+      photoLabel: "Sube Fotos del Patio (opcional)",
+      notesLabel: "Notas del Proyecto",
+      depositNotice:
+        "Un depósito reembolsable de $49 asegura tu cita y se acredita a tu proyecto.",
+      payDeposit: "Pagar Depósito y Confirmar",
+      back: "Atrás",
+      next: "Continuar",
+      successTitle: "¡Reserva Confirmada!",
+      successBody: "Confirmación enviada a tu correo. ¡Nos vemos pronto!",
+    },
+    referral: {
+      heading: "Recompensas por Referidos",
+      subheading: "Comparte tu enlace, gana puntos y aplícalos directo a tu próximo servicio.",
+      pointsBalance: "Saldo de Puntos",
+      jobsReferred: "Trabajos Referidos",
+      yourCode: "Tu Código de Referido",
+      copyLink: "Copiar Enlace",
+      copied: "¡Copiado!",
+      applyBalance: "Aplicar Saldo al Próximo Servicio",
+      howItWorks: "Cómo Funciona",
+      steps: [
+        "Comparte tu enlace único con amigos y vecinos.",
+        "Ellos reservan y completan un proyecto con nosotros.",
+        "Ambos ganan puntos de recompensa automáticamente.",
+      ],
+    },
+    footer: {
+      rights: "Todos los derechos reservados.",
+      familyOwned: "Negocio familiar desde 1998.",
+    },
+  },
+} satisfies Record<Locale, unknown>;
+
+export type Dictionary = (typeof dictionary)["en"];
