@@ -22,7 +22,7 @@ function CategoryCard({ category }: { category: ServiceCategory }) {
   const Icon = ICONS[category.icon];
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-amber-200 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-2xl border border-brand-200 bg-white shadow-sm">
       <div className="relative aspect-[16/9] w-full">
         <Image
           src={`/illustrations/${category.id}.svg`}
@@ -30,7 +30,7 @@ function CategoryCard({ category }: { category: ServiceCategory }) {
           fill
           className="object-cover"
         />
-        <span className="absolute left-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-amber-700 shadow">
+        <span className="absolute left-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand-700 shadow">
           <Icon size={20} />
         </span>
       </div>
@@ -45,14 +45,14 @@ function CategoryCard({ category }: { category: ServiceCategory }) {
 
         <button
           onClick={() => setOpen((v) => !v)}
-          className="mt-4 flex w-full items-center justify-between rounded-full border border-amber-300 px-4 py-2 text-sm font-semibold text-amber-800 transition hover:bg-amber-50"
+          className="mt-4 flex w-full items-center justify-between rounded-full border border-brand-300 px-4 py-2 text-sm font-semibold text-brand-800 transition hover:bg-brand-50"
         >
           {open ? t.catalog.hideServices : t.catalog.viewServices}
           <ChevronDown size={16} className={`transition-transform ${open ? "rotate-180" : ""}`} />
         </button>
 
         {open && (
-          <ul className="mt-4 space-y-3 border-t border-amber-100 pt-4">
+          <ul className="mt-4 space-y-3 border-t border-brand-100 pt-4">
             {category.items.map((item) => (
               <li key={item.en}>
                 <p className="text-sm font-semibold text-stone-800">
@@ -74,7 +74,7 @@ export function ServiceCatalog() {
   const { t } = useLanguage();
 
   return (
-    <section id="catalog" className="bg-gradient-to-b from-orange-100 to-amber-50 py-16">
+    <section id="catalog" className="bg-gradient-to-b from-orange-100 to-brand-50 py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-bold text-stone-900 sm:text-4xl">{t.catalog.heading}</h2>
@@ -91,3 +91,4 @@ export function ServiceCatalog() {
     </section>
   );
 }
+

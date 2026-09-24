@@ -24,9 +24,9 @@ export function Services() {
           <button
             key={key}
             onClick={() => openBooking({ service: key })}
-            className="flex flex-col items-start gap-3 rounded-2xl border border-stone-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-1 hover:border-amber-600 hover:shadow-md"
+            className="flex flex-col items-start gap-3 rounded-2xl border border-stone-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-1 hover:border-brand-600 hover:shadow-md"
           >
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
               <Icon size={20} />
             </span>
             <span className="text-sm font-semibold text-stone-800">
@@ -38,3 +38,4 @@ export function Services() {
     </section>
   );
 }
+

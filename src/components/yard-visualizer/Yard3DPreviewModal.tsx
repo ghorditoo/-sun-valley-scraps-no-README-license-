@@ -86,7 +86,7 @@ export function Yard3DPreviewModal({
 
         <button
           onClick={onSendToBooking}
-          className="flex items-center gap-2 rounded-full bg-amber-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-amber-500"
+          className="flex items-center gap-2 rounded-full bg-brand-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-brand-500"
         >
           <Upload size={15} />
           {t.visualizer.sendToBooking}
@@ -95,3 +95,4 @@ export function Yard3DPreviewModal({
     </motion.div>
   );
 }
+

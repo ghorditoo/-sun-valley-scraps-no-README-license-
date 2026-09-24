@@ -144,7 +144,7 @@ export function BookingModal() {
                 <div key={key} className="flex flex-1 items-center gap-2">
                   <div
                     className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                      i <= step ? "bg-amber-700 text-white" : "bg-stone-200 text-stone-500"
+                      i <= step ? "bg-brand-700 text-white" : "bg-stone-200 text-stone-500"
                     }`}
                   >
                     {i + 1}
@@ -161,12 +161,12 @@ export function BookingModal() {
           <div className="p-6">
             {success ? (
               <div className="flex flex-col items-center gap-3 py-10 text-center">
-                <CheckCircle2 size={48} className="text-amber-600" />
+                <CheckCircle2 size={48} className="text-brand-600" />
                 <h3 className="text-xl font-bold text-stone-900">{t.booking.successTitle}</h3>
                 <p className="text-stone-600">{t.booking.successBody}</p>
                 <button
                   onClick={closeBooking}
-                  className="mt-4 rounded-full bg-amber-700 px-6 py-2.5 text-sm font-semibold text-white hover:bg-amber-800"
+                  className="mt-4 rounded-full bg-brand-700 px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-800"
                 >
                   Close
                 </button>
@@ -183,11 +183,11 @@ export function BookingModal() {
                           onClick={() => setService(key)}
                           className={`flex items-center gap-3 rounded-xl border-2 p-4 text-left transition ${
                             service === key
-                              ? "border-amber-600 bg-amber-50"
+                              ? "border-brand-600 bg-brand-50"
                               : "border-stone-200 hover:border-stone-300"
                           }`}
                         >
-                          <Icon size={20} className="text-amber-700" />
+                          <Icon size={20} className="text-brand-700" />
                           <span className="text-sm font-semibold text-stone-800">
                             {t.booking.services[key]}
                           </span>
@@ -204,22 +204,22 @@ export function BookingModal() {
                         onClick={() => setVisitType("site")}
                         className={`flex items-center gap-2 rounded-xl border-2 p-4 text-left transition ${
                           visitType === "site"
-                            ? "border-amber-600 bg-amber-50"
+                            ? "border-brand-600 bg-brand-50"
                             : "border-stone-200 hover:border-stone-300"
                         }`}
                       >
-                        <MapPin size={18} className="text-amber-700" />
+                        <MapPin size={18} className="text-brand-700" />
                         <span className="text-sm font-semibold">{t.booking.visitType.site}</span>
                       </button>
                       <button
                         onClick={() => setVisitType("virtual")}
                         className={`flex items-center gap-2 rounded-xl border-2 p-4 text-left transition ${
                           visitType === "virtual"
-                            ? "border-amber-600 bg-amber-50"
+                            ? "border-brand-600 bg-brand-50"
                             : "border-stone-200 hover:border-stone-300"
                         }`}
                       >
-                        <Video size={18} className="text-amber-700" />
+                        <Video size={18} className="text-brand-700" />
                         <span className="text-sm font-semibold">{t.booking.visitType.virtual}</span>
                       </button>
                     </div>
@@ -231,7 +231,7 @@ export function BookingModal() {
                           type="date"
                           value={date}
                           onChange={(e) => setDate(e.target.value)}
-                          className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-600 focus:outline-none"
+                          className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-600 focus:outline-none"
                         />
                       </label>
                       <label className="block text-sm">
@@ -240,7 +240,7 @@ export function BookingModal() {
                           type="time"
                           value={time}
                           onChange={(e) => setTime(e.target.value)}
-                          className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-600 focus:outline-none"
+                          className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-600 focus:outline-none"
                         />
                       </label>
                     </div>
@@ -255,7 +255,7 @@ export function BookingModal() {
                         <input
                           value={name}
                           onChange={(e) => setName(e.target.value)}
-                          className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-600 focus:outline-none"
+                          className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-600 focus:outline-none"
                         />
                       </label>
                       <label className="block text-sm">
@@ -264,7 +264,7 @@ export function BookingModal() {
                           type="email"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-600 focus:outline-none"
+                          className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-600 focus:outline-none"
                         />
                       </label>
                       <label className="block text-sm">
@@ -272,7 +272,7 @@ export function BookingModal() {
                         <input
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
-                          className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-600 focus:outline-none"
+                          className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-600 focus:outline-none"
                         />
                       </label>
                       <label className="block text-sm">
@@ -280,7 +280,7 @@ export function BookingModal() {
                         <input
                           value={address}
                           onChange={(e) => setAddress(e.target.value)}
-                          className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-600 focus:outline-none"
+                          className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-600 focus:outline-none"
                         />
                       </label>
                     </div>
@@ -307,12 +307,12 @@ export function BookingModal() {
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
                         rows={3}
-                        className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-amber-600 focus:outline-none"
+                        className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 focus:border-brand-600 focus:outline-none"
                       />
                     </label>
 
                     {prefill.yardPlan && (
-                      <div className="rounded-lg bg-amber-50 p-3 text-xs text-amber-800">
+                      <div className="rounded-lg bg-brand-50 p-3 text-xs text-brand-800">
                         Attached "Build Your Yard" plan: ${prefill.yardPlan.estimatedTotal.toFixed(0)}{" "}
                         estimated · {prefill.yardPlan.items.length} materials
                       </div>
@@ -345,7 +345,7 @@ export function BookingModal() {
                     <button
                       onClick={() => setStep((s) => s + 1)}
                       disabled={step === 0 ? !canContinueFromService : !canContinueFromSchedule}
-                      className="rounded-full bg-amber-700 px-6 py-2 text-sm font-semibold text-white disabled:opacity-40"
+                      className="rounded-full bg-brand-700 px-6 py-2 text-sm font-semibold text-white disabled:opacity-40"
                     >
                       {t.booking.next}
                     </button>
@@ -355,7 +355,7 @@ export function BookingModal() {
                     <button
                       onClick={handleCreateBookingAndDeposit}
                       disabled={!canContinueFromDetails || submitting}
-                      className="rounded-full bg-amber-700 px-6 py-2 text-sm font-semibold text-white disabled:opacity-40"
+                      className="rounded-full bg-brand-700 px-6 py-2 text-sm font-semibold text-white disabled:opacity-40"
                     >
                       {submitting ? "…" : t.booking.next}
                     </button>
@@ -369,3 +369,4 @@ export function BookingModal() {
     </AnimatePresence>
   );
 }
+

@@ -39,14 +39,14 @@ function DepositForm({ onSuccess }: { onSuccess: () => void }) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <PaymentElement />
       {error && <p className="text-sm text-red-600">{error}</p>}
-      <div className="flex items-center gap-2 rounded-lg bg-amber-50 p-3 text-xs text-amber-800">
+      <div className="flex items-center gap-2 rounded-lg bg-brand-50 p-3 text-xs text-brand-800">
         <ShieldCheck size={16} />
         {t.booking.depositNotice}
       </div>
       <button
         type="submit"
         disabled={!stripe || submitting}
-        className="flex w-full items-center justify-center gap-2 rounded-full bg-amber-700 py-3 text-sm font-semibold text-white transition hover:bg-amber-800 disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-2 rounded-full bg-brand-700 py-3 text-sm font-semibold text-white transition hover:bg-brand-800 disabled:opacity-50"
       >
         {submitting && <Loader2 size={16} className="animate-spin" />}
         {t.booking.payDeposit}
@@ -71,3 +71,4 @@ export function DepositPaymentStep({
     </Elements>
   );
 }
+
