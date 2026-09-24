@@ -2,7 +2,8 @@ import Stripe from "stripe";
 
 // Server-only Stripe client. STRIPE_SECRET_KEY must be set in your environment (.env.local).
 // Never import this file from a "use client" component.
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "sk_test_placeholder", {
+// `||` (not `??`) so an empty-string env var (e.g. left blank in a hosting dashboard) still falls back.
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_placeholder", {
   apiVersion: "2026-08-26.dahlia",
 });
 
