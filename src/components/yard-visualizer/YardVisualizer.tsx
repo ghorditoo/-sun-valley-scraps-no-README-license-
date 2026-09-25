@@ -40,7 +40,7 @@ import type {
   YardScanPoint,
 } from "@/lib/types";
 import { Yard3DPreviewModal } from "./Yard3DPreviewModal";
-import { VirtualYardBackdrop, type VirtualBackdrop } from "./VirtualYardBackdrop";
+import type { VirtualBackdrop } from "./VirtualYardBackdrop";
 import { YardGameWorkspace } from "./YardGameWorkspace";
 
 const categories: MaterialCategory[] = [
@@ -163,7 +163,7 @@ export function YardVisualizer() {
   const selectedMaterial = materials.find((material) => material.id === selectedMaterialId);
   const selectedPlacedItem = placedItems.find((item) => item.id === selectedItemId);
   const selectedPlacedMaterial = materials.find((material) => material.id === selectedPlacedItem?.materialId);
-  const isGameWorkspace = buildMode === "piece" && (designMode === "virtual" || designMode === "manual");
+  const isGameWorkspace = designMode === "virtual" || designMode === "manual";
   const normalizedQuery = materialQuery.trim().toLocaleLowerCase();
   const filteredMaterials = materials.filter((material) => {
     const inCategory = activeCategory === "all" || material.category === activeCategory;
@@ -549,11 +549,10 @@ export function YardVisualizer() {
                   measurements={measurements}
                   backdrop={designMode === "manual" ? "modern" : virtualBackdrop}
                   cameraView={workspaceView}
+                  snapEnabled={buildMode === "piece"}
                   onPlace={placeSelectedMaterial}
                   onSelect={setSelectedItemId}
                 />
-              ) : designMode === "virtual" || designMode === "manual" ? (
-                <VirtualYardBackdrop backdrop={designMode === "manual" ? "modern" : virtualBackdrop} />
               ) : designMode === "camera" ? (
                 <>
                   <video ref={videoRef} autoPlay muted playsInline className="absolute inset-0 h-full w-full object-cover" />

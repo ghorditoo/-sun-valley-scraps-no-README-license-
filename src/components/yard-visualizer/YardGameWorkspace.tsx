@@ -20,6 +20,7 @@ export function YardGameWorkspace({
   measurements,
   backdrop,
   cameraView,
+  snapEnabled,
   onPlace,
   onSelect,
 }: {
@@ -29,6 +30,7 @@ export function YardGameWorkspace({
   measurements: YardMeasurements;
   backdrop: VirtualBackdrop;
   cameraView: "orbit" | "drone";
+  snapEnabled: boolean;
   onPlace: (xPct: number, yPct: number) => void;
   onSelect: (id: string | null) => void;
 }) {
@@ -36,10 +38,17 @@ export function YardGameWorkspace({
   const onPlaceRef = useRef(onPlace);
   const onSelectRef = useRef(onSelect);
   const selectedMaterialRef = useRef(selectedMaterial);
+  const selectedItemIdRef = useRef(selectedItemId);
   const interactiveObjectsRef = useRef<THREE.Object3D[]>([]);
   onPlaceRef.current = onPlace;
   onSelectRef.current = onSelect;
   selectedMaterialRef.current = selectedMaterial;
+  selectedItemIdRef.current = selectedItemId;
+
+  useEffect(() => {
+    const canvas = hostRef.current?.querySelector("canvas");
+    if (canvas) canvas.style.cursor = selectedMaterial ? "crosshair" : "grab";
+  }, [selectedMaterial]);
 
   useEffect(() => {
     interactiveObjectsRef.current.forEach((object) => {
@@ -110,6 +119,7 @@ export function YardGameWorkspace({
     grid.material.opacity = 0.38;
     grid.material.transparent = true;
     grid.position.y = 0.01;
+    grid.visible = snapEnabled;
     scene.add(grid);
 
     const boundary = new THREE.LineSegments(
@@ -147,6 +157,10 @@ export function YardGameWorkspace({
           materialsToUpdate.forEach((entry) => {
             if (entry instanceof THREE.MeshStandardMaterial || entry instanceof THREE.MeshPhysicalMaterial) {
               entry.userData.originalEmissive = entry.emissive.getHex();
+              if (item.id === selectedItemIdRef.current) {
+                entry.emissive.setHex(0x0e7490);
+                entry.emissiveIntensity = 0.42;
+              }
             }
           });
         }
@@ -178,8 +192,10 @@ export function YardGameWorkspace({
         const rect = renderer.domElement.getBoundingClientRect();
         const screenXPct = ((event.clientX - rect.left) / rect.width) * 100;
         const screenYPct = ((event.clientY - rect.top) / rect.height) * 100;
-        const xPct = Math.round((hit ? (hit.point.x / yardWidth + 0.5) * 100 : screenXPct) / 5) * 5;
-        const yPct = Math.round((hit ? (hit.point.z / yardLength + 0.5) * 100 : screenYPct) / 5) * 5;
+        const rawXPct = hit ? (hit.point.x / yardWidth + 0.5) * 100 : screenXPct;
+        const rawYPct = hit ? (hit.point.z / yardLength + 0.5) * 100 : screenYPct;
+        const xPct = snapEnabled ? Math.round(rawXPct / 5) * 5 : rawXPct;
+        const yPct = snapEnabled ? Math.round(rawYPct / 5) * 5 : rawYPct;
         onPlaceRef.current(Math.max(0, Math.min(95, xPct)), Math.max(0, Math.min(95, yPct)));
         return;
       }
@@ -222,9 +238,11 @@ export function YardGameWorkspace({
     let frame = 0;
     const render = () => {
       const elapsed = (performance.now() - startedAt) / 1000;
-      house.position.y = THREE.MathUtils.lerp(house.position.y, houseTargetY, 0.075);
+      if (Math.abs(house.position.y - houseTargetY) > 0.01) house.position.y = THREE.MathUtils.lerp(house.position.y, houseTargetY, 0.075);
+      else house.position.y = houseTargetY;
       dropTargets.forEach((targetY, object) => {
-        object.position.y = THREE.MathUtils.lerp(object.position.y, targetY, 0.11);
+        if (Math.abs(object.position.y - targetY) > 0.01) object.position.y = THREE.MathUtils.lerp(object.position.y, targetY, 0.11);
+        else object.position.y = targetY;
       });
       grid.material.opacity = 0.3 + Math.sin(elapsed * 1.6) * 0.08;
       controls.update();
@@ -245,13 +263,16 @@ export function YardGameWorkspace({
         if (!(object instanceof THREE.Mesh)) return;
         object.geometry.dispose();
         const objectMaterial = object.material;
-        if (Array.isArray(objectMaterial)) objectMaterial.forEach((entry) => entry.dispose());
-        else objectMaterial.dispose();
+        const objectMaterials = Array.isArray(objectMaterial) ? objectMaterial : [objectMaterial];
+        objectMaterials.forEach((entry) => {
+          if (entry instanceof THREE.MeshStandardMaterial || entry instanceof THREE.MeshPhysicalMaterial) entry.map?.dispose();
+          entry.dispose();
+        });
       });
       renderer.dispose();
       renderer.domElement.remove();
     };
-  }, [backdrop, cameraView, measurements, placedItems]);
+  }, [backdrop, cameraView, measurements, placedItems, snapEnabled]);
 
   return <div ref={hostRef} className="h-full w-full" data-testid="yard-game-workspace" />;
 }
