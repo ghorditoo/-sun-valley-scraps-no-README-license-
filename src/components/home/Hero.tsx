@@ -9,7 +9,7 @@ export function Hero() {
   const { openBooking } = useBooking();
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-brand-100 via-orange-50 to-orange-50">
+    <section className="relative overflow-hidden bg-gradient-to-b from-stone-50 to-stone-50">
       <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
         <div className="mx-auto max-w-3xl text-center">
           <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-brand-700 shadow-sm">

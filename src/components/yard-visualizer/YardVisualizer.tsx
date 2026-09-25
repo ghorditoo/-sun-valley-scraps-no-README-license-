@@ -150,7 +150,7 @@ export function YardVisualizer() {
   }
 
   return (
-    <section id="visualizer" className="bg-orange-50 py-16">
+    <section id="visualizer" className="bg-white py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-bold text-stone-900 sm:text-4xl">{t.visualizer.heading}</h2>
