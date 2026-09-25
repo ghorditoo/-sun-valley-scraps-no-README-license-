@@ -10,6 +10,36 @@ export type PlacedMaterialItem = {
   rotationDeg: number;
 };
 
+export type MaterialCategory =
+  | "pavers"
+  | "stone"
+  | "ground"
+  | "turf"
+  | "plants"
+  | "walls"
+  | "structures"
+  | "cooking"
+  | "fireWater"
+  | "lighting"
+  | "recreation";
+
+export type MaterialVisual =
+  | "paver"
+  | "brick"
+  | "stone"
+  | "gravel"
+  | "soil"
+  | "grass"
+  | "plant"
+  | "wall"
+  | "pergola"
+  | "shade"
+  | "kitchen"
+  | "fire"
+  | "water"
+  | "light"
+  | "play";
+
 export type YardPlan = {
   photoDataUrl: string | null;
   areaSqFt: number;
@@ -24,9 +54,15 @@ export type BookingPrefill = {
 
 export type Material = {
   id: string;
-  category: "pavers" | "turf" | "plants" | "rock" | "walls" | "repairs" | "minigolf";
+  category: MaterialCategory;
   name: string;
-  pricePerSqFt: number;
-  thumbnail: string;
+  nameEs: string;
+  price: number;
+  priceUnit: "sqft" | "linearFt" | "each";
+  placement: "surface" | "linear" | "object";
+  visual: MaterialVisual;
   swatchColor: string;
+  texture: string;
+  defaultWidthPct: number;
+  aspectRatio: number;
 };

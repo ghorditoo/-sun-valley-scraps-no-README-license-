@@ -72,11 +72,11 @@ export function Yard3DPreviewModal({
                     left: `${item.xPct}%`,
                     top: `${item.yPct}%`,
                     width: `${item.widthPct}%`,
-                    aspectRatio: "1 / 1",
+                    aspectRatio: material.aspectRatio,
                     backgroundColor: material.swatchColor,
-                    backgroundImage: `url(${material.thumbnail})`,
+                    backgroundImage: material.texture,
                     backgroundSize: "cover",
-                    transform: `rotate(${item.rotationDeg}deg) translateZ(30px)`,
+                    transform: `rotate(${item.rotationDeg}deg) translateZ(${material.placement === "object" ? 42 : 22}px)`,
                   }}
                 />
               );

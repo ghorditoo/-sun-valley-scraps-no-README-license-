@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Upload,
@@ -14,39 +13,83 @@ import {
   Copy,
   Undo2,
   Box,
+  Search,
+  Fence,
+  Flag,
+  Flame,
+  Lightbulb,
+  Droplets,
+  Sun,
+  Wrench,
 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useBooking } from "@/components/booking/BookingContext";
 import { materials } from "@/data/materials";
-import type { Material, PlacedMaterialItem } from "@/lib/types";
+import type { Material, MaterialCategory, MaterialVisual, PlacedMaterialItem } from "@/lib/types";
 import { Yard3DPreviewModal } from "./Yard3DPreviewModal";
 
-const categories: Material["category"][] = ["pavers", "turf", "plants", "rock", "walls", "repairs", "minigolf"];
+const categories: MaterialCategory[] = [
+  "pavers",
+  "stone",
+  "ground",
+  "turf",
+  "plants",
+  "walls",
+  "structures",
+  "cooking",
+  "fireWater",
+  "lighting",
+  "recreation",
+];
+
+const categoryIcons: Record<MaterialCategory, typeof Fence> = {
+  pavers: Fence,
+  stone: Sun,
+  ground: Wrench,
+  turf: Flag,
+  plants: Sun,
+  walls: Fence,
+  structures: Fence,
+  cooking: Flame,
+  fireWater: Droplets,
+  lighting: Lightbulb,
+  recreation: Flag,
+};
+
+const visualIcons: Record<MaterialVisual, typeof Fence> = {
+  paver: Fence,
+  brick: Fence,
+  stone: Sun,
+  gravel: Sun,
+  soil: Wrench,
+  grass: Flag,
+  plant: Sun,
+  wall: Fence,
+  pergola: Fence,
+  shade: Sun,
+  kitchen: Flame,
+  fire: Flame,
+  water: Droplets,
+  light: Lightbulb,
+  play: Flag,
+};
 
 function MaterialThumb({ material }: { material: Material }) {
-  const [failed, setFailed] = useState(false);
-  if (failed) {
-    return (
-      <div
-        className="h-12 w-12 rounded-lg border border-white/40"
-        style={{ backgroundColor: material.swatchColor }}
-      />
-    );
-  }
+  const Icon = visualIcons[material.visual];
+
   return (
-    <Image
-      src={material.thumbnail}
-      alt={material.name}
-      width={48}
-      height={48}
-      className="h-12 w-12 rounded-lg object-cover"
-      onError={() => setFailed(true)}
-    />
+    <span
+      className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-black/10 shadow-inner"
+      style={{ backgroundColor: material.swatchColor, backgroundImage: material.texture }}
+    >
+      <span className="absolute inset-0 bg-gradient-to-br from-white/25 via-transparent to-black/20" />
+      <Icon className="relative text-white drop-shadow-md" size={22} strokeWidth={1.8} />
+    </span>
   );
 }
 
 export function YardVisualizer() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const { openBooking } = useBooking();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -58,6 +101,24 @@ export function YardVisualizer() {
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [areaSqFt, setAreaSqFt] = useState(500);
   const [show3DPreview, setShow3DPreview] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<MaterialCategory | "all">("all");
+  const [materialQuery, setMaterialQuery] = useState("");
+
+  const selectedMaterial = materials.find((material) => material.id === selectedMaterialId);
+  const normalizedQuery = materialQuery.trim().toLocaleLowerCase();
+  const filteredMaterials = materials.filter((material) => {
+    const inCategory = activeCategory === "all" || material.category === activeCategory;
+    const localizedName = locale === "es" ? material.nameEs : material.name;
+    return inCategory && (!normalizedQuery || localizedName.toLocaleLowerCase().includes(normalizedQuery));
+  });
+
+  function materialName(material: Material) {
+    return locale === "es" ? material.nameEs : material.name;
+  }
+
+  function formatMaterialPrice(material: Material) {
+    return `$${material.price.toLocaleString()} ${t.visualizer.priceUnits[material.priceUnit]}`;
+  }
 
   function commit(next: PlacedMaterialItem[]) {
     setHistory((prev) => [...prev, placedItems]);
@@ -82,26 +143,28 @@ export function YardVisualizer() {
   }
 
   function handleCanvasClick(e: React.MouseEvent<HTMLDivElement>) {
-    if (selectedItemId) {
+    if (selectedItemId && !selectedMaterial) {
       setSelectedItemId(null);
       return;
     }
-    if (!selectedMaterialId || !canvasRef.current) return;
+    if (!selectedMaterial || !canvasRef.current) return;
     const rect = canvasRef.current.getBoundingClientRect();
     const xPct = ((e.clientX - rect.left) / rect.width) * 100;
     const yPct = ((e.clientY - rect.top) / rect.height) * 100;
 
+    const newItemId = `${selectedMaterial.id}-${Date.now()}`;
     commit([
       ...placedItems,
       {
-        id: `${selectedMaterialId}-${Date.now()}`,
-        materialId: selectedMaterialId,
+        id: newItemId,
+        materialId: selectedMaterial.id,
         xPct: Math.min(92, Math.max(0, xPct)),
         yPct: Math.min(88, Math.max(0, yPct)),
-        widthPct: 16,
+        widthPct: selectedMaterial.defaultWidthPct,
         rotationDeg: 0,
       },
     ]);
+    setSelectedItemId(newItemId);
   }
 
   function updateItem(id: string, patch: Partial<PlacedMaterialItem>) {
@@ -132,8 +195,13 @@ export function YardVisualizer() {
   const estimatedTotal = placedItems.reduce((sum, item) => {
     const material = materials.find((m) => m.id === item.materialId);
     if (!material) return sum;
-    const shareSqFt = areaSqFt / Math.max(placedItems.length, 1);
-    return sum + material.pricePerSqFt * shareSqFt;
+    if (material.priceUnit === "each") return sum + material.price;
+    if (material.priceUnit === "linearFt") {
+      const estimatedLength = Math.sqrt(areaSqFt) * (item.widthPct / 18);
+      return sum + material.price * estimatedLength;
+    }
+    const footprintShare = Math.min(0.5, Math.max(0.04, (item.widthPct / 100) ** 2 * 4));
+    return sum + material.price * areaSqFt * footprintShare;
   }, 0);
 
   function handleSendToBooking() {
@@ -187,12 +255,21 @@ export function YardVisualizer() {
                 const material = materials.find((m) => m.id === item.materialId);
                 if (!material) return null;
                 const isSelected = selectedItemId === item.id;
+                const MaterialIcon = visualIcons[material.visual];
                 return (
                   <motion.div
                     key={item.id}
                     drag
                     dragConstraints={canvasRef}
                     dragMomentum={false}
+                    onDragEnd={(_, info) => {
+                      if (!canvasRef.current) return;
+                      const bounds = canvasRef.current.getBoundingClientRect();
+                      updateItem(item.id, {
+                        xPct: Math.min(94, Math.max(0, item.xPct + (info.offset.x / bounds.width) * 100)),
+                        yPct: Math.min(92, Math.max(0, item.yPct + (info.offset.y / bounds.height) * 100)),
+                      });
+                    }}
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1, rotate: item.rotationDeg }}
                     className={`group absolute flex items-center justify-center rounded-lg border-2 shadow-lg ${
@@ -202,9 +279,9 @@ export function YardVisualizer() {
                       left: `${item.xPct}%`,
                       top: `${item.yPct}%`,
                       width: `${item.widthPct}%`,
-                      aspectRatio: "1 / 1",
+                      aspectRatio: material.aspectRatio,
                       backgroundColor: material.swatchColor,
-                      backgroundImage: `url(${material.thumbnail})`,
+                      backgroundImage: material.texture,
                       backgroundSize: "cover",
                     }}
                     onClick={(e) => {
@@ -212,6 +289,9 @@ export function YardVisualizer() {
                       setSelectedItemId(item.id);
                     }}
                   >
+                    {material.placement === "object" && (
+                      <MaterialIcon className="pointer-events-none text-white/90 drop-shadow-lg" size="38%" strokeWidth={1.5} />
+                    )}
                     {isSelected && (
                       <div className="absolute -top-10 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full bg-stone-900/90 px-1.5 py-1 shadow-xl">
                         <button
@@ -283,39 +363,78 @@ export function YardVisualizer() {
               <p className="mt-2 text-xs text-stone-500">{t.visualizer.selectHint}</p>
             )}
 
+            {selectedMaterial && (
+              <div className="mt-3 flex items-center gap-3 rounded-lg border border-brand-200 bg-brand-50 px-3 py-2.5 text-sm text-brand-900">
+                <MaterialThumb material={selectedMaterial} />
+                <div className="min-w-0">
+                  <p className="font-semibold">{t.visualizer.selectedMaterial}: {materialName(selectedMaterial)}</p>
+                  <p className="text-xs text-brand-700">{t.visualizer.placeHint}</p>
+                </div>
+              </div>
+            )}
+
             {/* Material Dock */}
-            <div className="mt-6 rounded-2xl border border-stone-200 bg-stone-50 p-4">
-              <h3 className="mb-3 text-sm font-semibold text-stone-700">{t.visualizer.dockTitle}</h3>
-              <div className="flex flex-col gap-4">
-                {categories.map((category) => (
-                  <div key={category}>
-                    <p className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-400">
+            <div className="mt-6 rounded-lg border border-stone-200 bg-stone-50 p-4 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h3 className="text-base font-bold text-stone-800">{t.visualizer.dockTitle}</h3>
+                  <p className="text-xs text-stone-500">{materials.length} {t.visualizer.inventoryCount}</p>
+                </div>
+                <label className="relative block sm:w-72">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={16} />
+                  <input
+                    type="search"
+                    value={materialQuery}
+                    onChange={(event) => setMaterialQuery(event.target.value)}
+                    placeholder={t.visualizer.searchMaterials}
+                    className="w-full rounded-lg border border-stone-300 bg-white py-2 pl-9 pr-3 text-sm outline-none transition focus:border-brand-600 focus:ring-2 focus:ring-brand-100"
+                  />
+                </label>
+              </div>
+
+              <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveCategory("all")}
+                  className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${activeCategory === "all" ? "border-brand-700 bg-brand-700 text-white" : "border-stone-300 bg-white text-stone-600 hover:border-brand-400"}`}
+                >
+                  <Box size={14} />
+                  {t.visualizer.allMaterials}
+                </button>
+                {categories.map((category) => {
+                  const CategoryIcon = categoryIcons[category];
+                  return (
+                    <button
+                      type="button"
+                      key={category}
+                      onClick={() => setActiveCategory(category)}
+                      className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${activeCategory === category ? "border-brand-700 bg-brand-700 text-white" : "border-stone-300 bg-white text-stone-600 hover:border-brand-400"}`}
+                    >
+                      <CategoryIcon size={14} />
                       {t.visualizer.categories[category]}
-                    </p>
-                    <div className="flex gap-3 overflow-x-auto pb-1">
-                      {materials
-                        .filter((m) => m.category === category)
-                        .map((material) => (
-                          <button
-                            key={material.id}
-                            onClick={() => setSelectedMaterialId(material.id)}
-                            className={`flex shrink-0 flex-col items-center gap-1 rounded-xl border-2 p-2 transition ${
-                              selectedMaterialId === material.id
-                                ? "border-brand-600 bg-brand-50"
-                                : "border-transparent bg-white hover:border-stone-300"
-                            }`}
-                          >
-                            <MaterialThumb material={material} />
-                            <span className="max-w-[80px] truncate text-[11px] text-stone-600">
-                              {material.name}
-                            </span>
-                            <span className="text-[11px] font-semibold text-brand-700">
-                              ${material.pricePerSqFt}/ft²
-                            </span>
-                          </button>
-                        ))}
-                    </div>
-                  </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-3 grid max-h-[430px] grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3 xl:grid-cols-4">
+                {filteredMaterials.map((material) => (
+                  <button
+                    type="button"
+                    key={material.id}
+                    onClick={() => setSelectedMaterialId(material.id)}
+                    className={`flex min-h-24 items-center gap-3 rounded-lg border p-2.5 text-left transition ${
+                      selectedMaterialId === material.id
+                        ? "border-brand-600 bg-brand-50 shadow-[0_0_0_2px_rgba(5,150,105,0.12)]"
+                        : "border-stone-200 bg-white hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-sm"
+                    }`}
+                  >
+                    <MaterialThumb material={material} />
+                    <span className="min-w-0">
+                      <span className="block text-xs font-semibold leading-tight text-stone-800">{materialName(material)}</span>
+                      <span className="mt-1 block text-[11px] font-medium text-brand-700">{formatMaterialPrice(material)}</span>
+                    </span>
+                  </button>
                 ))}
               </div>
             </div>
@@ -353,7 +472,7 @@ export function YardVisualizer() {
                   const material = materials.find((m) => m.id === item.materialId);
                   return (
                     <li key={item.id} className="flex items-center justify-between text-stone-600">
-                      <span className="truncate">{material?.name}</span>
+                      <span className="truncate">{material ? materialName(material) : ""}</span>
                       <button onClick={() => removeItem(item.id)} className="text-stone-400 hover:text-red-600">
                         <Trash2 size={14} />
                       </button>
