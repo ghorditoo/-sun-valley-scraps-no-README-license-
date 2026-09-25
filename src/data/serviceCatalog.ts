@@ -7,6 +7,7 @@ export type ServiceCatalogItem = {
 
 export type ServiceCategory = {
   id: string;
+  coverImage: string;
   icon: "fence" | "flag" | "flame" | "lightbulb" | "droplets" | "sun" | "wrench";
   nameEn: string;
   nameEs: string;
@@ -20,6 +21,7 @@ export type ServiceCategory = {
 export const serviceCatalog: ServiceCategory[] = [
   {
     id: "hardscaping",
+    coverImage: "/gallery/showcase/project-01.jpg",
     icon: "fence",
     nameEn: "Hardscaping & Masonry",
     nameEs: "Construcción de Exteriores y Mampostería",
@@ -66,6 +68,7 @@ export const serviceCatalog: ServiceCategory[] = [
   },
   {
     id: "turf",
+    coverImage: "/gallery/showcase/project-03.jpg",
     icon: "flag",
     nameEn: "Synthetic Turf & Putting Greens",
     nameEs: "Césped Sintético y Greens de Golf",
@@ -94,6 +97,7 @@ export const serviceCatalog: ServiceCategory[] = [
   },
   {
     id: "outdoor-living",
+    coverImage: "/gallery/showcase/project-07.jpg",
     icon: "flame",
     nameEn: "Outdoor Living & Shade Structures",
     nameEs: "Vida al Aire Libre y Estructuras de Sombra",
@@ -128,6 +132,7 @@ export const serviceCatalog: ServiceCategory[] = [
   },
   {
     id: "lighting",
+    coverImage: "/gallery/showcase/project-12.jpg",
     icon: "lightbulb",
     nameEn: "Low-Voltage Landscape Lighting",
     nameEs: "Iluminación de Paisaje de Bajo Voltaje",
@@ -162,6 +167,7 @@ export const serviceCatalog: ServiceCategory[] = [
   },
   {
     id: "irrigation",
+    coverImage: "/gallery/showcase/project-17.jpg",
     icon: "droplets",
     nameEn: "Irrigation & Water Management",
     nameEs: "Riego y Manejo del Agua",
@@ -196,6 +202,7 @@ export const serviceCatalog: ServiceCategory[] = [
   },
   {
     id: "xeriscape",
+    coverImage: "/gallery/showcase/project-21.jpg",
     icon: "sun",
     nameEn: "Desert Landscaping (Xeriscape) & Plant Material",
     nameEs: "Paisajismo del Desierto (Xerojardinería) y Plantas",
@@ -236,6 +243,7 @@ export const serviceCatalog: ServiceCategory[] = [
   },
   {
     id: "repairs",
+    coverImage: "/gallery/showcase/project-26.jpg",
     icon: "wrench",
     nameEn: "Repairs, Restoration & Maintenance",
     nameEs: "Reparaciones, Restauración y Mantenimiento",

@@ -22,30 +22,36 @@ function CategoryCard({ category }: { category: ServiceCategory }) {
   const Icon = ICONS[category.icon];
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-brand-200 bg-white shadow-sm">
-      <div className="relative aspect-[16/9] w-full">
+    <article className="group overflow-hidden rounded-lg border border-stone-200 bg-white shadow-[0_12px_35px_-20px_rgba(28,25,23,0.45)] transition-[transform,box-shadow] duration-500 [transform-style:preserve-3d] hover:[transform:perspective(1200px)_rotateX(1.5deg)_rotateY(-1.5deg)_translateY(-8px)] hover:shadow-[0_28px_55px_-24px_rgba(6,78,59,0.45)]">
+      <div className="relative aspect-[4/3] w-full overflow-hidden bg-stone-900">
         <Image
-          src={`/illustrations/${category.id}.svg`}
+          src={category.coverImage}
           alt={locale === "es" ? category.nameEs : category.nameEn}
           fill
-          className="object-cover"
+          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+          className="object-cover saturate-[1.08] contrast-[1.06] transition duration-700 ease-out group-hover:scale-[1.08] group-hover:saturate-[1.16]"
         />
-        <span className="absolute left-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand-700 shadow">
-          <Icon size={20} />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.02)_35%,rgba(6,78,59,0.76)_100%)]" />
+        <div className="absolute inset-0 opacity-50 mix-blend-soft-light bg-[radial-gradient(circle_at_72%_18%,rgba(255,255,255,0.55),transparent_32%)]" />
+        <div className="absolute inset-3 rounded-md border border-white/25 shadow-[inset_0_0_40px_rgba(0,0,0,0.12)]" />
+        <span className="absolute left-4 top-4 flex h-11 w-11 items-center justify-center rounded-full border border-white/40 bg-white/90 text-brand-800 shadow-lg backdrop-blur">
+          <Icon size={21} strokeWidth={1.8} />
         </span>
+        <h3 className="absolute bottom-4 left-5 right-5 text-xl font-bold leading-tight text-white drop-shadow-lg">
+          {locale === "es" ? category.nameEs : category.nameEn}
+        </h3>
       </div>
 
       <div className="p-5">
-        <h3 className="text-lg font-bold text-stone-900">
-          {locale === "es" ? category.nameEs : category.nameEn}
-        </h3>
-        <p className="mt-1.5 text-sm text-stone-600">
+        <p className="text-sm leading-relaxed text-stone-600">
           {locale === "es" ? category.descEs : category.descEn}
         </p>
 
         <button
+          type="button"
           onClick={() => setOpen((v) => !v)}
-          className="mt-4 flex w-full items-center justify-between rounded-full border border-brand-300 px-4 py-2 text-sm font-semibold text-brand-800 transition hover:bg-brand-50"
+          aria-expanded={open}
+          className="mt-4 flex w-full items-center justify-between rounded-full border border-brand-300 px-4 py-2 text-sm font-semibold text-brand-800 transition hover:border-brand-500 hover:bg-brand-50"
         >
           {open ? t.catalog.hideServices : t.catalog.viewServices}
           <ChevronDown size={16} className={`transition-transform ${open ? "rotate-180" : ""}`} />
@@ -66,7 +72,7 @@ function CategoryCard({ category }: { category: ServiceCategory }) {
           </ul>
         )}
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -79,7 +85,6 @@ export function ServiceCatalog() {
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-bold text-stone-900 sm:text-4xl">{t.catalog.heading}</h2>
           <p className="mt-3 text-stone-600">{t.catalog.subheading}</p>
-          <p className="mt-2 text-xs italic text-stone-400">{t.catalog.photoNote}</p>
         </div>
 
         <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">

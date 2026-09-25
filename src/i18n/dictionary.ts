@@ -139,7 +139,6 @@ export const dictionary = {
         "From patios to putting greens, here's the full range of hardscaping, planting, lighting, and irrigation work our crew handles.",
       viewServices: "View Services",
       hideServices: "Hide Services",
-      photoNote: "Illustrated for now — real project photos coming soon.",
     },
     footer: {
       rights: "All rights reserved.",
@@ -282,7 +281,6 @@ export const dictionary = {
         "Desde patios hasta greens de golf, esta es la gama completa de construcción de exteriores, plantación, iluminación y riego que maneja nuestro equipo.",
       viewServices: "Ver Servicios",
       hideServices: "Ocultar Servicios",
-      photoNote: "Ilustrado por ahora — pronto fotos reales de proyectos.",
     },
     footer: {
       rights: "Todos los derechos reservados.",
