@@ -40,8 +40,9 @@ export function Yard3DPreviewModal({
       className="fixed inset-0 z-[120] flex items-center justify-center bg-black/90 p-4"
     >
       <button
+        type="button"
         onClick={onClose}
-        className="absolute right-5 top-5 z-10 text-white/80 hover:text-white"
+        className="fixed right-5 top-5 z-[140] flex h-10 w-10 items-center justify-center rounded-full bg-black/45 text-white/80 backdrop-blur hover:bg-black/70 hover:text-white"
         aria-label={t.visualizer.close}
       >
         <X size={28} />

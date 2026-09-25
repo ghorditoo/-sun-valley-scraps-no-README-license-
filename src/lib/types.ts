@@ -70,6 +70,7 @@ export type YardPlan = {
   scanPoints?: YardScanPoint[];
   measurements?: YardMeasurements;
   buildMode?: "quick" | "piece";
+  propertyAddress?: string;
   areaSqFt: number;
   items: PlacedMaterialItem[];
   estimatedTotal: number;

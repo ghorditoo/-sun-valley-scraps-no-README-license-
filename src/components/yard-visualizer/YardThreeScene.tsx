@@ -25,7 +25,7 @@ function addBox(group: THREE.Group, size: [number, number, number], position: [n
   return mesh;
 }
 
-function createMaterialObject(item: PlacedMaterialItem, yardWidth: number, yardLength: number) {
+export function createMaterialObject(item: PlacedMaterialItem, yardWidth: number, yardLength: number) {
   const material = materials.find((entry) => entry.id === item.materialId);
   if (!material) return null;
 

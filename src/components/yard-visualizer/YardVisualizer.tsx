@@ -24,6 +24,8 @@ import {
   Camera,
   Ruler,
   ScanLine,
+  Gamepad2,
+  MapPin,
 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useBooking } from "@/components/booking/BookingContext";
@@ -39,6 +41,7 @@ import type {
 } from "@/lib/types";
 import { Yard3DPreviewModal } from "./Yard3DPreviewModal";
 import { VirtualYardBackdrop, type VirtualBackdrop } from "./VirtualYardBackdrop";
+import { YardGameWorkspace } from "./YardGameWorkspace";
 
 const categories: MaterialCategory[] = [
   "pavers",
@@ -140,6 +143,10 @@ export function YardVisualizer() {
     exteriorColor: "#d6c3a1",
   });
   const [buildMode, setBuildMode] = useState<"quick" | "piece">("piece");
+  const [workspaceView, setWorkspaceView] = useState<"orbit" | "drone">("orbit");
+  const [propertyAddress, setPropertyAddress] = useState("");
+  const [addressStaged, setAddressStaged] = useState(false);
+  const [workspaceSeed, setWorkspaceSeed] = useState(0);
 
   useEffect(() => {
     if (cameraStatus === "ready" && videoRef.current && streamRef.current) {
@@ -150,11 +157,13 @@ export function YardVisualizer() {
 
   useEffect(() => () => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
+    if (videoRef.current) videoRef.current.srcObject = null;
   }, []);
 
   const selectedMaterial = materials.find((material) => material.id === selectedMaterialId);
   const selectedPlacedItem = placedItems.find((item) => item.id === selectedItemId);
   const selectedPlacedMaterial = materials.find((material) => material.id === selectedPlacedItem?.materialId);
+  const isGameWorkspace = buildMode === "piece" && (designMode === "virtual" || designMode === "manual");
   const normalizedQuery = materialQuery.trim().toLocaleLowerCase();
   const filteredMaterials = materials.filter((material) => {
     const inCategory = activeCategory === "all" || material.category === activeCategory;
@@ -198,6 +207,7 @@ export function YardVisualizer() {
   function stopCamera() {
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
     setCameraStatus("idle");
     setIsTracing(false);
   }
@@ -258,14 +268,21 @@ export function YardVisualizer() {
     }
     if (!selectedMaterial) return;
 
+    placeSelectedMaterial(xPct, yPct);
+  }
+
+  function placeSelectedMaterial(xPct: number, yPct: number) {
+    if (!selectedMaterial) return;
+    const snappedXPct = buildMode === "piece" ? Math.round(xPct / 5) * 5 : xPct;
+    const snappedYPct = buildMode === "piece" ? Math.round(yPct / 5) * 5 : yPct;
     const newItemId = `${selectedMaterial.id}-${Date.now()}`;
     commit([
       ...placedItems,
       {
         id: newItemId,
         materialId: selectedMaterial.id,
-        xPct: Math.min(92, Math.max(0, xPct)),
-        yPct: Math.min(88, Math.max(0, yPct)),
+        xPct: Math.min(92, Math.max(0, snappedXPct)),
+        yPct: Math.min(88, Math.max(0, snappedYPct)),
         widthPct: buildMode === "piece"
           ? selectedMaterial.buildPiece === "tile"
             ? 10
@@ -329,6 +346,7 @@ export function YardVisualizer() {
         scanPoints,
         measurements,
         buildMode,
+        propertyAddress,
         areaSqFt,
         items: placedItems,
         estimatedTotal,
@@ -433,8 +451,43 @@ export function YardVisualizer() {
                   {t.visualizer.pieceBuild}
                 </button>
               </div>
-              {buildMode === "piece" && <span className="text-[11px] font-semibold uppercase text-cyan-200">{t.visualizer.snapHint}</span>}
+              {buildMode === "piece" && (
+                <div className="flex items-center gap-2">
+                  <span className="hidden text-[11px] font-semibold uppercase text-cyan-200 sm:inline">{t.visualizer.snapHint}</span>
+                  <button type="button" onClick={() => setWorkspaceView("orbit")} className={`rounded px-2.5 py-1 text-xs font-semibold ${workspaceView === "orbit" ? "bg-cyan-400 text-stone-950" : "bg-white/10 text-stone-300"}`}>
+                    {t.visualizer.orbitView}
+                  </button>
+                  <button type="button" onClick={() => setWorkspaceView("drone")} className={`rounded px-2.5 py-1 text-xs font-semibold ${workspaceView === "drone" ? "bg-cyan-400 text-stone-950" : "bg-white/10 text-stone-300"}`}>
+                    {t.visualizer.droneView}
+                  </button>
+                </div>
+              )}
             </div>
+
+            {isGameWorkspace && (
+              <form
+                className="mb-3 flex flex-col gap-2 rounded-lg border border-stone-200 bg-white p-3 sm:flex-row sm:items-end"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (!propertyAddress.trim()) return;
+                  setAddressStaged(true);
+                  setWorkspaceSeed((value) => value + 1);
+                }}
+              >
+                <label className="flex-1 text-xs font-semibold text-stone-600">
+                  {t.visualizer.propertyAddress}
+                  <span className="relative mt-1 block">
+                    <MapPin className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={15} />
+                    <input value={propertyAddress} onChange={(event) => { setPropertyAddress(event.target.value); setAddressStaged(false); }} placeholder={t.visualizer.addressPlaceholder} className="w-full rounded-lg border border-stone-300 py-2 pl-9 pr-3 text-sm outline-none focus:border-cyan-500" />
+                  </span>
+                </label>
+                <button type="submit" className="flex items-center justify-center gap-2 rounded-lg bg-stone-900 px-4 py-2 text-xs font-bold text-white hover:bg-stone-800">
+                  <Gamepad2 size={15} />
+                  {t.visualizer.stageProperty}
+                </button>
+                {addressStaged && <span className="text-xs font-medium text-brand-700 sm:max-w-36">{t.visualizer.addressStaged}</span>}
+              </form>
+            )}
 
             {designMode === "manual" && (
               <div className="mb-3 rounded-lg border border-cyan-200 bg-stone-950 p-4 text-white shadow-[0_16px_40px_-24px_rgba(6,182,212,0.8)]">
@@ -479,10 +532,27 @@ export function YardVisualizer() {
 
             <div
               ref={canvasRef}
-              onClick={handleCanvasClick}
+              onClick={isGameWorkspace ? undefined : handleCanvasClick}
+              onKeyDown={(event) => {
+                if (!isGameWorkspace && event.key === "Enter" && selectedMaterial) placeSelectedMaterial(50, 50);
+              }}
+              tabIndex={isGameWorkspace ? -1 : 0}
+              aria-label={t.visualizer.heading}
               className="relative aspect-[4/3] w-full cursor-crosshair overflow-hidden rounded-lg border border-cyan-200 bg-stone-900 shadow-[0_24px_60px_-30px_rgba(8,145,178,0.65)]"
             >
-              {designMode === "virtual" || designMode === "manual" ? (
+              {isGameWorkspace ? (
+                <YardGameWorkspace
+                  key={workspaceSeed}
+                  placedItems={placedItems}
+                  selectedMaterial={selectedMaterial}
+                  selectedItemId={selectedItemId}
+                  measurements={measurements}
+                  backdrop={designMode === "manual" ? "modern" : virtualBackdrop}
+                  cameraView={workspaceView}
+                  onPlace={placeSelectedMaterial}
+                  onSelect={setSelectedItemId}
+                />
+              ) : designMode === "virtual" || designMode === "manual" ? (
                 <VirtualYardBackdrop backdrop={designMode === "manual" ? "modern" : virtualBackdrop} />
               ) : designMode === "camera" ? (
                 <>
@@ -525,11 +595,11 @@ export function YardVisualizer() {
                 </button>
               )}
 
-              {buildMode === "piece" && (
+              {buildMode === "piece" && !isGameWorkspace && (
                 <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(103,232,249,0.16)_1px,transparent_1px),linear-gradient(90deg,rgba(103,232,249,0.16)_1px,transparent_1px)] [background-size:5%_5%]" />
               )}
 
-              {placedItems.map((item) => {
+              {!isGameWorkspace && placedItems.map((item) => {
                 const material = materials.find((m) => m.id === item.materialId);
                 if (!material) return null;
                 const isSelected = selectedItemId === item.id;
@@ -780,7 +850,9 @@ export function YardVisualizer() {
                   const material = materials.find((m) => m.id === item.materialId);
                   return (
                     <li key={item.id} className="flex items-center justify-between text-stone-600">
-                      <span className="truncate">{material ? materialName(material) : ""}</span>
+                      <button type="button" onClick={() => setSelectedItemId(item.id)} className="truncate text-left hover:text-brand-700">
+                        {material ? materialName(material) : ""}
+                      </button>
                       <button onClick={() => removeItem(item.id)} className="text-stone-400 hover:text-red-600">
                         <Trash2 size={14} />
                       </button>
