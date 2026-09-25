@@ -10,6 +10,21 @@ export type PlacedMaterialItem = {
   rotationDeg: number;
 };
 
+export type YardDesignMode = "photo" | "virtual" | "camera" | "manual";
+
+export type YardScanPoint = {
+  xPct: number;
+  yPct: number;
+};
+
+export type YardMeasurements = {
+  yardLengthFt: number;
+  yardWidthFt: number;
+  houseWidthFt: number;
+  houseDepthFt: number;
+  exteriorColor: string;
+};
+
 export type MaterialCategory =
   | "pavers"
   | "stone"
@@ -42,8 +57,10 @@ export type MaterialVisual =
 
 export type YardPlan = {
   photoDataUrl: string | null;
-  designMode?: "photo" | "virtual";
+  designMode?: YardDesignMode;
   virtualBackdrop?: "desert" | "modern" | "poolside";
+  scanPoints?: YardScanPoint[];
+  measurements?: YardMeasurements;
   areaSqFt: number;
   items: PlacedMaterialItem[];
   estimatedTotal: number;

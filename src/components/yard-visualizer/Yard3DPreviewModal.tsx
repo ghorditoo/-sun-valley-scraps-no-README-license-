@@ -1,30 +1,35 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { X, Upload } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useTilt3D } from "@/lib/useTilt3D";
 import { materials } from "@/data/materials";
-import type { PlacedMaterialItem } from "@/lib/types";
+import type { PlacedMaterialItem, YardDesignMode, YardMeasurements } from "@/lib/types";
 import { VirtualYardBackdrop, type VirtualBackdrop } from "./VirtualYardBackdrop";
+import { YardThreeScene } from "./YardThreeScene";
 
 export function Yard3DPreviewModal({
   photoDataUrl,
   designMode,
   virtualBackdrop,
+  measurements,
   placedItems,
   onClose,
   onSendToBooking,
 }: {
   photoDataUrl: string | null;
-  designMode: "photo" | "virtual";
+  designMode: YardDesignMode;
   virtualBackdrop: VirtualBackdrop;
+  measurements: YardMeasurements;
   placedItems: PlacedMaterialItem[];
   onClose: () => void;
   onSendToBooking: () => void;
 }) {
   const { t } = useLanguage();
   const { ref, rotateX, rotateY, handleMouseMove, handleMouseLeave } = useTilt3D(8);
+  const [viewMode, setViewMode] = useState<"holographic" | "360">("holographic");
 
   return (
     <motion.div
@@ -46,9 +51,30 @@ export function Yard3DPreviewModal({
         <div className="text-center text-white">
           <h3 className="text-2xl font-bold">{t.visualizer.preview3dTitle}</h3>
           <p className="mt-1 text-sm text-stone-300">{t.visualizer.preview3dHint}</p>
+          <div className="mx-auto mt-3 inline-flex rounded-lg border border-cyan-200/25 bg-white/10 p-1 backdrop-blur">
+            <button
+              type="button"
+              onClick={() => setViewMode("holographic")}
+              className={`rounded-md px-3 py-1.5 text-xs font-semibold ${viewMode === "holographic" ? "bg-cyan-400 text-stone-950" : "text-cyan-100"}`}
+            >
+              {t.visualizer.holographicView}
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("360")}
+              className={`rounded-md px-3 py-1.5 text-xs font-semibold ${viewMode === "360" ? "bg-cyan-400 text-stone-950" : "text-cyan-100"}`}
+            >
+              {t.visualizer.view360}
+            </button>
+          </div>
         </div>
 
         <div style={{ perspective: 1200 }} className="w-full">
+          {viewMode === "360" ? (
+            <div className="aspect-[4/3] w-full overflow-hidden rounded-lg border border-cyan-200/40 bg-stone-900 shadow-[0_30px_90px_rgba(6,182,212,0.2)]">
+              <YardThreeScene placedItems={placedItems} measurements={measurements} backdrop={designMode === "manual" ? "modern" : virtualBackdrop} />
+            </div>
+          ) : (
           <motion.div
             ref={ref}
             onMouseMove={handleMouseMove}
@@ -56,8 +82,8 @@ export function Yard3DPreviewModal({
             style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
             className="relative aspect-[4/3] w-full overflow-hidden rounded-lg border border-cyan-200/40 shadow-[0_30px_90px_rgba(6,182,212,0.2)]"
           >
-            {designMode === "virtual" ? (
-              <VirtualYardBackdrop backdrop={virtualBackdrop} />
+            {designMode !== "photo" ? (
+              <VirtualYardBackdrop backdrop={designMode === "manual" ? "modern" : virtualBackdrop} />
             ) : photoDataUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -89,6 +115,7 @@ export function Yard3DPreviewModal({
               );
             })}
           </motion.div>
+          )}
         </div>
 
         <button

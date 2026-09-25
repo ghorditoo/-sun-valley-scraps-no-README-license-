@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Upload,
@@ -21,11 +21,22 @@ import {
   Droplets,
   Sun,
   Wrench,
+  Camera,
+  Ruler,
+  ScanLine,
 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useBooking } from "@/components/booking/BookingContext";
 import { materials } from "@/data/materials";
-import type { Material, MaterialCategory, MaterialVisual, PlacedMaterialItem } from "@/lib/types";
+import type {
+  Material,
+  MaterialCategory,
+  MaterialVisual,
+  PlacedMaterialItem,
+  YardDesignMode,
+  YardMeasurements,
+  YardScanPoint,
+} from "@/lib/types";
 import { Yard3DPreviewModal } from "./Yard3DPreviewModal";
 import { VirtualYardBackdrop, type VirtualBackdrop } from "./VirtualYardBackdrop";
 
@@ -95,6 +106,8 @@ export function YardVisualizer() {
   const { openBooking } = useBooking();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
   const [selectedMaterialId, setSelectedMaterialId] = useState<string | null>(null);
@@ -105,8 +118,29 @@ export function YardVisualizer() {
   const [show3DPreview, setShow3DPreview] = useState(false);
   const [activeCategory, setActiveCategory] = useState<MaterialCategory | "all">("all");
   const [materialQuery, setMaterialQuery] = useState("");
-  const [designMode, setDesignMode] = useState<"photo" | "virtual">("virtual");
+  const [designMode, setDesignMode] = useState<YardDesignMode>("virtual");
   const [virtualBackdrop, setVirtualBackdrop] = useState<VirtualBackdrop>("desert");
+  const [cameraStatus, setCameraStatus] = useState<"idle" | "starting" | "ready" | "denied">("idle");
+  const [isTracing, setIsTracing] = useState(false);
+  const [scanPoints, setScanPoints] = useState<YardScanPoint[]>([]);
+  const [measurements, setMeasurements] = useState<YardMeasurements>({
+    yardLengthFt: 25,
+    yardWidthFt: 20,
+    houseWidthFt: 18,
+    houseDepthFt: 10,
+    exteriorColor: "#d6c3a1",
+  });
+
+  useEffect(() => {
+    if (cameraStatus === "ready" && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      void videoRef.current.play();
+    }
+  }, [cameraStatus, designMode]);
+
+  useEffect(() => () => {
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+  }, []);
 
   const selectedMaterial = materials.find((material) => material.id === selectedMaterialId);
   const normalizedQuery = materialQuery.trim().toLocaleLowerCase();
@@ -149,15 +183,66 @@ export function YardVisualizer() {
     reader.readAsDataURL(file);
   }
 
+  function stopCamera() {
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+    setCameraStatus("idle");
+    setIsTracing(false);
+  }
+
+  function selectDesignMode(mode: YardDesignMode) {
+    if (mode !== "camera") stopCamera();
+    setDesignMode(mode);
+  }
+
+  async function startCamera() {
+    setDesignMode("camera");
+    setCameraStatus("starting");
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraStatus("denied");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false,
+      });
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current = stream;
+      setCameraStatus("ready");
+    } catch {
+      setCameraStatus("denied");
+    }
+  }
+
+  function updateMeasurement(key: keyof YardMeasurements, value: string) {
+    setMeasurements((current) => {
+      const next = key === "exteriorColor"
+        ? { ...current, exteriorColor: value }
+        : { ...current, [key]: Math.max(1, Number(value) || 1) };
+      if (key === "yardLengthFt" || key === "yardWidthFt") {
+        setAreaSqFt(next.yardLengthFt * next.yardWidthFt);
+      }
+      return next;
+    });
+  }
+
   function handleCanvasClick(e: React.MouseEvent<HTMLDivElement>) {
+    if (!canvasRef.current) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const xPct = ((e.clientX - rect.left) / rect.width) * 100;
+    const yPct = ((e.clientY - rect.top) / rect.height) * 100;
+
+    if (designMode === "camera" && isTracing) {
+      setScanPoints((points) => [...points, { xPct, yPct }]);
+      return;
+    }
+
     if (selectedItemId && !selectedMaterial) {
       setSelectedItemId(null);
       return;
     }
-    if (!selectedMaterial || !canvasRef.current) return;
-    const rect = canvasRef.current.getBoundingClientRect();
-    const xPct = ((e.clientX - rect.left) / rect.width) * 100;
-    const yPct = ((e.clientY - rect.top) / rect.height) * 100;
+    if (!selectedMaterial) return;
 
     const newItemId = `${selectedMaterial.id}-${Date.now()}`;
     commit([
@@ -219,6 +304,8 @@ export function YardVisualizer() {
         photoDataUrl,
         designMode,
         virtualBackdrop,
+        scanPoints,
+        measurements,
         areaSqFt,
         items: placedItems,
         estimatedTotal,
@@ -238,20 +325,36 @@ export function YardVisualizer() {
           {/* Canvas */}
           <div>
             <div className="mb-3 flex flex-col gap-3 rounded-lg border border-cyan-200/60 bg-[linear-gradient(135deg,rgba(236,254,255,0.92),rgba(240,253,244,0.96))] p-3 shadow-[0_10px_30px_-22px_rgba(8,145,178,0.75)] sm:flex-row sm:items-center sm:justify-between">
-              <div className="inline-flex rounded-lg border border-cyan-200 bg-white/80 p-1 shadow-inner">
+              <div className="grid grid-cols-2 rounded-lg border border-cyan-200 bg-white/80 p-1 shadow-inner sm:flex">
                 <button
                   type="button"
-                  onClick={() => setDesignMode("virtual")}
+                  onClick={() => selectDesignMode("virtual")}
                   className={`rounded-md px-3 py-2 text-xs font-semibold transition ${designMode === "virtual" ? "bg-brand-700 text-white shadow" : "text-stone-600 hover:bg-cyan-50"}`}
                 >
                   {t.visualizer.virtualMode}
                 </button>
                 <button
                   type="button"
-                  onClick={() => photoDataUrl ? setDesignMode("photo") : fileInputRef.current?.click()}
+                  onClick={() => photoDataUrl ? selectDesignMode("photo") : fileInputRef.current?.click()}
                   className={`rounded-md px-3 py-2 text-xs font-semibold transition ${designMode === "photo" ? "bg-brand-700 text-white shadow" : "text-stone-600 hover:bg-cyan-50"}`}
                 >
                   {t.visualizer.photoMode}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void startCamera()}
+                  className={`flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-semibold transition ${designMode === "camera" ? "bg-brand-700 text-white shadow" : "text-stone-600 hover:bg-cyan-50"}`}
+                >
+                  <Camera size={14} />
+                  {t.visualizer.cameraMode}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => selectDesignMode("manual")}
+                  className={`flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-semibold transition ${designMode === "manual" ? "bg-brand-700 text-white shadow" : "text-stone-600 hover:bg-cyan-50"}`}
+                >
+                  <Ruler size={14} />
+                  {t.visualizer.manualMode}
                 </button>
               </div>
 
@@ -270,15 +373,105 @@ export function YardVisualizer() {
                   ))}
                 </div>
               )}
+
+              {designMode === "camera" && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => cameraStatus === "ready" ? stopCamera() : void startCamera()}
+                    className="rounded-full border border-cyan-300 bg-white px-3 py-1 text-xs font-semibold text-cyan-900"
+                  >
+                    {cameraStatus === "ready" ? t.visualizer.cameraStop : t.visualizer.cameraStart}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={cameraStatus !== "ready"}
+                    onClick={() => setIsTracing((value) => !value)}
+                    className={`flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold disabled:opacity-40 ${isTracing ? "border-cyan-600 bg-cyan-600 text-white" : "border-cyan-300 bg-white text-cyan-900"}`}
+                  >
+                    <ScanLine size={13} />
+                    {isTracing ? t.visualizer.stopTracing : t.visualizer.traceBoundary}
+                  </button>
+                  {scanPoints.length > 0 && (
+                    <button type="button" onClick={() => setScanPoints([])} className="text-xs font-semibold text-stone-600 hover:text-red-600">
+                      {t.visualizer.clearTrace}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
+
+            {designMode === "manual" && (
+              <div className="mb-3 rounded-lg border border-cyan-200 bg-stone-950 p-4 text-white shadow-[0_16px_40px_-24px_rgba(6,182,212,0.8)]">
+                <h3 className="flex items-center gap-2 text-sm font-semibold text-cyan-100">
+                  <Ruler size={16} />
+                  {t.visualizer.measurementsTitle}
+                </h3>
+                <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {([
+                    ["yardLengthFt", t.visualizer.yardLength],
+                    ["yardWidthFt", t.visualizer.yardWidth],
+                    ["houseWidthFt", t.visualizer.houseWidth],
+                    ["houseDepthFt", t.visualizer.houseDepth],
+                  ] as const).map(([key, label]) => (
+                    <label key={key} className="text-[11px] text-stone-300">
+                      {label}
+                      <input
+                        type="number"
+                        min="1"
+                        value={measurements[key]}
+                        onChange={(event) => updateMeasurement(key, event.target.value)}
+                        className="mt-1 w-full rounded-md border border-cyan-400/30 bg-white/10 px-2 py-2 text-sm text-white outline-none focus:border-cyan-300"
+                      />
+                    </label>
+                  ))}
+                </div>
+                <div className="mt-3 flex items-center gap-3">
+                  <span className="text-[11px] text-stone-300">{t.visualizer.exteriorColor}</span>
+                  {["#d6c3a1", "#f2efe6", "#87938a", "#b86f52", "#4f5b60"].map((color) => (
+                    <button
+                      type="button"
+                      key={color}
+                      aria-label={`${t.visualizer.exteriorColor} ${color}`}
+                      onClick={() => updateMeasurement("exteriorColor", color)}
+                      className={`h-7 w-7 rounded-full border-2 transition ${measurements.exteriorColor === color ? "scale-110 border-cyan-300 shadow-[0_0_12px_rgba(103,232,249,0.65)]" : "border-white/40"}`}
+                      style={{ backgroundColor: color }}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div
               ref={canvasRef}
               onClick={handleCanvasClick}
               className="relative aspect-[4/3] w-full cursor-crosshair overflow-hidden rounded-lg border border-cyan-200 bg-stone-900 shadow-[0_24px_60px_-30px_rgba(8,145,178,0.65)]"
             >
-              {designMode === "virtual" ? (
-                <VirtualYardBackdrop backdrop={virtualBackdrop} />
+              {designMode === "virtual" || designMode === "manual" ? (
+                <VirtualYardBackdrop backdrop={designMode === "manual" ? "modern" : virtualBackdrop} />
+              ) : designMode === "camera" ? (
+                <>
+                  <video ref={videoRef} autoPlay muted playsInline className="absolute inset-0 h-full w-full object-cover" />
+                  {cameraStatus !== "ready" && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-stone-950 text-center text-cyan-100">
+                      <Camera size={38} className={cameraStatus === "starting" ? "animate-pulse" : ""} />
+                      <p className="max-w-xs px-4 text-sm">{cameraStatus === "denied" ? t.visualizer.cameraDenied : t.visualizer.cameraWaiting}</p>
+                      {cameraStatus !== "starting" && (
+                        <button type="button" onClick={(event) => { event.stopPropagation(); void startCamera(); }} className="rounded-full bg-cyan-500 px-4 py-2 text-xs font-bold text-stone-950">
+                          {t.visualizer.cameraStart}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  {scanPoints.length > 0 && (
+                    <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full">
+                      {scanPoints.length > 2 && <polygon points={scanPoints.map((point) => `${point.xPct},${point.yPct}`).join(" ")} fill="rgba(34,211,238,0.16)" stroke="rgb(103,232,249)" strokeWidth="0.6" />}
+                      <polyline points={scanPoints.map((point) => `${point.xPct},${point.yPct}`).join(" ")} fill="none" stroke="rgb(165,243,252)" strokeWidth="0.7" />
+                      {scanPoints.map((point, index) => <circle key={`${point.xPct}-${point.yPct}-${index}`} cx={point.xPct} cy={point.yPct} r="1.2" fill="white" stroke="rgb(6,182,212)" strokeWidth="0.5" />)}
+                    </svg>
+                  )}
+                  {scanPoints.length > 0 && <span className="absolute bottom-3 left-3 rounded-full bg-stone-950/80 px-3 py-1 text-[11px] font-semibold text-cyan-100">{scanPoints.length} {t.visualizer.scanPoints}</span>}
+                </>
               ) : photoDataUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={photoDataUrl} alt="Your yard" className="h-full w-full object-cover" />
@@ -490,8 +683,9 @@ export function YardVisualizer() {
           {/* Budget Panel */}
           <div className="flex flex-col gap-4 rounded-2xl border border-stone-200 bg-stone-50 p-5">
             <div>
-              <label className="text-sm font-medium text-stone-700">{t.visualizer.areaLabel}</label>
+              <label htmlFor="yard-area" className="text-sm font-medium text-stone-700">{t.visualizer.areaLabel}</label>
               <input
+                id="yard-area"
                 type="number"
                 min={50}
                 step={10}
@@ -573,6 +767,7 @@ export function YardVisualizer() {
             photoDataUrl={photoDataUrl}
             designMode={designMode}
             virtualBackdrop={virtualBackdrop}
+            measurements={measurements}
             placedItems={placedItems}
             onClose={() => setShow3DPreview(false)}
             onSendToBooking={handleSendToBooking}

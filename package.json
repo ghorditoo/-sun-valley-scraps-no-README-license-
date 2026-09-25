@@ -11,13 +11,15 @@
   "dependencies": {
     "@stripe/react-stripe-js": "^6.12.0",
     "@stripe/stripe-js": "^9.17.0",
+    "@types/three": "^0.186.0",
     "clsx": "^2.1.1",
     "framer-motion": "^13.4.2",
     "lucide-react": "^1.47.0",
     "next": "16.3.6",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "stripe": "^22.6.2"
+    "stripe": "^22.6.2",
+    "three": "^0.186.1"
   },
   "devDependencies": {
     "@prisma/client": "^6.19.3",
