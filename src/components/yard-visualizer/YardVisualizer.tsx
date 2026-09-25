@@ -52,6 +52,9 @@ const categories: MaterialCategory[] = [
   "fireWater",
   "lighting",
   "recreation",
+  "poolParts",
+  "building",
+  "furniture",
 ];
 
 const categoryIcons: Record<MaterialCategory, typeof Fence> = {
@@ -66,6 +69,9 @@ const categoryIcons: Record<MaterialCategory, typeof Fence> = {
   fireWater: Droplets,
   lighting: Lightbulb,
   recreation: Flag,
+  poolParts: Droplets,
+  building: Fence,
+  furniture: Box,
 };
 
 const visualIcons: Record<MaterialVisual, typeof Fence> = {
@@ -84,6 +90,9 @@ const visualIcons: Record<MaterialVisual, typeof Fence> = {
   water: Droplets,
   light: Lightbulb,
   play: Flag,
+  pool: Droplets,
+  house: Fence,
+  furniture: Box,
 };
 
 function MaterialThumb({ material }: { material: Material }) {
@@ -130,6 +139,7 @@ export function YardVisualizer() {
     houseDepthFt: 10,
     exteriorColor: "#d6c3a1",
   });
+  const [buildMode, setBuildMode] = useState<"quick" | "piece">("piece");
 
   useEffect(() => {
     if (cameraStatus === "ready" && videoRef.current && streamRef.current) {
@@ -143,6 +153,8 @@ export function YardVisualizer() {
   }, []);
 
   const selectedMaterial = materials.find((material) => material.id === selectedMaterialId);
+  const selectedPlacedItem = placedItems.find((item) => item.id === selectedItemId);
+  const selectedPlacedMaterial = materials.find((material) => material.id === selectedPlacedItem?.materialId);
   const normalizedQuery = materialQuery.trim().toLocaleLowerCase();
   const filteredMaterials = materials.filter((material) => {
     const inCategory = activeCategory === "all" || material.category === activeCategory;
@@ -230,8 +242,10 @@ export function YardVisualizer() {
   function handleCanvasClick(e: React.MouseEvent<HTMLDivElement>) {
     if (!canvasRef.current) return;
     const rect = canvasRef.current.getBoundingClientRect();
-    const xPct = ((e.clientX - rect.left) / rect.width) * 100;
-    const yPct = ((e.clientY - rect.top) / rect.height) * 100;
+    const rawXPct = ((e.clientX - rect.left) / rect.width) * 100;
+    const rawYPct = ((e.clientY - rect.top) / rect.height) * 100;
+    const xPct = buildMode === "piece" ? Math.round(rawXPct / 5) * 5 : rawXPct;
+    const yPct = buildMode === "piece" ? Math.round(rawYPct / 5) * 5 : rawYPct;
 
     if (designMode === "camera" && isTracing) {
       setScanPoints((points) => [...points, { xPct, yPct }]);
@@ -252,8 +266,16 @@ export function YardVisualizer() {
         materialId: selectedMaterial.id,
         xPct: Math.min(92, Math.max(0, xPct)),
         yPct: Math.min(88, Math.max(0, yPct)),
-        widthPct: selectedMaterial.defaultWidthPct,
+        widthPct: buildMode === "piece"
+          ? selectedMaterial.buildPiece === "tile"
+            ? 10
+            : selectedMaterial.buildPiece === "edge"
+              ? 15
+              : Math.min(18, selectedMaterial.defaultWidthPct)
+          : selectedMaterial.defaultWidthPct,
         rotationDeg: 0,
+        colorOverride: selectedMaterial.swatchColor,
+        elevationFt: 0,
       },
     ]);
     setSelectedItemId(newItemId);
@@ -306,6 +328,7 @@ export function YardVisualizer() {
         virtualBackdrop,
         scanPoints,
         measurements,
+        buildMode,
         areaSqFt,
         items: placedItems,
         estimatedTotal,
@@ -401,6 +424,18 @@ export function YardVisualizer() {
               )}
             </div>
 
+            <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border border-stone-200 bg-stone-950 px-3 py-2 text-white">
+              <div className="inline-flex rounded-md border border-white/15 bg-white/5 p-1">
+                <button type="button" onClick={() => setBuildMode("quick")} className={`rounded px-3 py-1.5 text-xs font-semibold ${buildMode === "quick" ? "bg-white text-stone-900" : "text-stone-300"}`}>
+                  {t.visualizer.quickBuild}
+                </button>
+                <button type="button" onClick={() => setBuildMode("piece")} className={`rounded px-3 py-1.5 text-xs font-semibold ${buildMode === "piece" ? "bg-cyan-400 text-stone-950" : "text-stone-300"}`}>
+                  {t.visualizer.pieceBuild}
+                </button>
+              </div>
+              {buildMode === "piece" && <span className="text-[11px] font-semibold uppercase text-cyan-200">{t.visualizer.snapHint}</span>}
+            </div>
+
             {designMode === "manual" && (
               <div className="mb-3 rounded-lg border border-cyan-200 bg-stone-950 p-4 text-white shadow-[0_16px_40px_-24px_rgba(6,182,212,0.8)]">
                 <h3 className="flex items-center gap-2 text-sm font-semibold text-cyan-100">
@@ -490,6 +525,10 @@ export function YardVisualizer() {
                 </button>
               )}
 
+              {buildMode === "piece" && (
+                <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(103,232,249,0.16)_1px,transparent_1px),linear-gradient(90deg,rgba(103,232,249,0.16)_1px,transparent_1px)] [background-size:5%_5%]" />
+              )}
+
               {placedItems.map((item) => {
                 const material = materials.find((m) => m.id === item.materialId);
                 if (!material) return null;
@@ -510,7 +549,7 @@ export function YardVisualizer() {
                       });
                     }}
                     initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1, rotate: item.rotationDeg }}
+                    animate={{ scale: 1, opacity: 1, rotate: item.rotationDeg, y: -(item.elevationFt ?? 0) * 4 }}
                     data-visual={material.visual}
                     className={`material-chip group absolute flex items-center justify-center rounded-lg border-2 shadow-lg ${
                       isSelected ? "material-selected border-cyan-200 ring-2 ring-cyan-300" : "border-white/80"
@@ -520,11 +559,13 @@ export function YardVisualizer() {
                       top: `${item.yPct}%`,
                       width: `${item.widthPct}%`,
                       aspectRatio: material.aspectRatio,
-                      backgroundColor: material.swatchColor,
+                      backgroundColor: item.colorOverride ?? material.swatchColor,
                       backgroundImage: material.texture,
                       backgroundSize: "cover",
+                      zIndex: Math.round((item.elevationFt ?? 0) * 10) + 10,
                     }}
                     onClick={(e) => {
+                      if (buildMode === "piece" && selectedMaterial) return;
                       e.stopPropagation();
                       setSelectedItemId(item.id);
                     }}
@@ -610,6 +651,32 @@ export function YardVisualizer() {
                   <p className="font-semibold">{t.visualizer.selectedMaterial}: {materialName(selectedMaterial)}</p>
                   <p className="text-xs text-brand-700">{t.visualizer.placeHint}</p>
                 </div>
+                <button type="button" aria-label={t.visualizer.cancelPlacement} onClick={() => setSelectedMaterialId(null)} className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-brand-800 hover:bg-brand-100">
+                  <X size={16} />
+                </button>
+              </div>
+            )}
+
+            {selectedPlacedItem && selectedPlacedMaterial && (
+              <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-cyan-200 bg-stone-950 px-3 py-2.5 text-white shadow-[0_12px_35px_-25px_rgba(6,182,212,0.8)]">
+                <span className="text-xs font-semibold text-cyan-100">{t.visualizer.pieceColor}</span>
+                {selectedPlacedMaterial.colorOptions.map((color) => (
+                  <button
+                    type="button"
+                    key={color}
+                    aria-label={`${t.visualizer.pieceColor} ${color}`}
+                    onClick={() => updateItem(selectedPlacedItem.id, { colorOverride: color })}
+                    className={`h-7 w-7 rounded-full border-2 ${selectedPlacedItem.colorOverride === color ? "scale-110 border-cyan-200 shadow-[0_0_12px_rgba(103,232,249,0.8)]" : "border-white/35"}`}
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+                <span className="ml-auto text-xs text-stone-300">{(selectedPlacedItem.elevationFt ?? 0).toFixed(1)} ft</span>
+                <button type="button" aria-label={t.visualizer.lowerPiece} onClick={() => updateItem(selectedPlacedItem.id, { elevationFt: Math.max(0, (selectedPlacedItem.elevationFt ?? 0) - 0.5) })} className="flex h-7 w-7 items-center justify-center rounded bg-white/10 hover:bg-white/20">
+                  <Minus size={14} />
+                </button>
+                <button type="button" aria-label={t.visualizer.raisePiece} onClick={() => updateItem(selectedPlacedItem.id, { elevationFt: Math.min(8, (selectedPlacedItem.elevationFt ?? 0) + 0.5) })} className="flex h-7 w-7 items-center justify-center rounded bg-cyan-400 text-stone-950 hover:bg-cyan-300">
+                  <Plus size={14} />
+                </button>
               </div>
             )}
 

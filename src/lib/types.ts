@@ -8,6 +8,8 @@ export type PlacedMaterialItem = {
   yPct: number;
   widthPct: number;
   rotationDeg: number;
+  colorOverride?: string;
+  elevationFt?: number;
 };
 
 export type YardDesignMode = "photo" | "virtual" | "camera" | "manual";
@@ -36,7 +38,10 @@ export type MaterialCategory =
   | "cooking"
   | "fireWater"
   | "lighting"
-  | "recreation";
+  | "recreation"
+  | "poolParts"
+  | "building"
+  | "furniture";
 
 export type MaterialVisual =
   | "paver"
@@ -53,7 +58,10 @@ export type MaterialVisual =
   | "fire"
   | "water"
   | "light"
-  | "play";
+  | "play"
+  | "pool"
+  | "house"
+  | "furniture";
 
 export type YardPlan = {
   photoDataUrl: string | null;
@@ -61,6 +69,7 @@ export type YardPlan = {
   virtualBackdrop?: "desert" | "modern" | "poolside";
   scanPoints?: YardScanPoint[];
   measurements?: YardMeasurements;
+  buildMode?: "quick" | "piece";
   areaSqFt: number;
   items: PlacedMaterialItem[];
   estimatedTotal: number;
@@ -84,4 +93,6 @@ export type Material = {
   texture: string;
   defaultWidthPct: number;
   aspectRatio: number;
+  buildPiece: "tile" | "edge" | "object" | "structure";
+  colorOptions: string[];
 };

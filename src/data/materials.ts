@@ -14,6 +14,12 @@ const textures = {
   water: "repeating-radial-gradient(ellipse at 50% 100%, rgba(255,255,255,.4) 0 3px, transparent 4px 14px), linear-gradient(160deg, rgba(255,255,255,.3), transparent)",
 } as const;
 
+function adjustColor(hex: string, amount: number) {
+  const value = Number.parseInt(hex.slice(1), 16);
+  const channel = (shift: number) => Math.max(0, Math.min(255, ((value >> shift) & 255) + amount));
+  return `#${[channel(16), channel(8), channel(0)].map((entry) => entry.toString(16).padStart(2, "0")).join("")}`;
+}
+
 const item = (
   id: string,
   category: Material["category"],
@@ -27,7 +33,23 @@ const item = (
   texture: string,
   defaultWidthPct = placement === "object" ? 22 : 28,
   aspectRatio = 1,
-): Material => ({ id, category, name, nameEs, price, priceUnit, placement, visual, swatchColor, texture, defaultWidthPct, aspectRatio });
+  buildPiece: Material["buildPiece"] = placement === "surface" ? "tile" : placement === "linear" ? "edge" : visual === "pergola" || visual === "shade" ? "structure" : "object",
+): Material => ({
+  id,
+  category,
+  name,
+  nameEs,
+  price,
+  priceUnit,
+  placement,
+  visual,
+  swatchColor,
+  texture,
+  defaultWidthPct,
+  aspectRatio,
+  buildPiece,
+  colorOptions: [swatchColor, adjustColor(swatchColor, 28), adjustColor(swatchColor, -28)],
+});
 
 export const materials: Material[] = [
   item("paver-belgard-gray", "pavers", "Belgard Gray Pavers", "Adoquines Belgard Grises", 18, "sqft", "surface", "paver", "#8f9697", textures.paver),
@@ -98,4 +120,29 @@ export const materials: Material[] = [
   item("bocce", "recreation", "Bocce Ball Court", "Cancha de Bochas", 11500, "each", "surface", "play", "#a79570", textures.gravel, 38, 3.5),
   item("cornhole", "recreation", "Cornhole Game Zone", "Zona de Cornhole", 1800, "each", "object", "play", "#9b6a3c", textures.wood, 22, 1.8),
   item("lounge-set", "recreation", "Outdoor Lounge Set", "Sala Exterior", 3400, "each", "object", "play", "#6d625a", textures.wood, 25, 1.5),
+
+  item("pool-shell-tile", "poolParts", "Pool Shell Section", "Sección de Alberca", 2800, "each", "surface", "pool", "#2389a8", textures.water, 16, 1.5, "tile"),
+  item("pool-spa-module", "poolParts", "Raised Spa Module", "Módulo de Spa Elevado", 6800, "each", "object", "pool", "#287f91", textures.water, 18, 1, "object"),
+  item("pool-baja-shelf", "poolParts", "Baja Shelf Section", "Sección de Plataforma Baja", 3200, "each", "surface", "pool", "#55aabe", textures.water, 15, 1.6, "tile"),
+  item("pool-step", "poolParts", "Pool Entry Step", "Escalón de Entrada", 850, "each", "object", "pool", "#75bdca", textures.paver, 10, 2.4, "object"),
+  item("pool-coping", "poolParts", "Pool Coping Segment", "Segmento de Coronación", 48, "linearFt", "linear", "stone", "#d2c2a6", textures.stone, 15, 5, "edge"),
+  item("pool-waterline", "poolParts", "Waterline Tile Strip", "Franja de Azulejo", 36, "linearFt", "linear", "pool", "#176a82", textures.paver, 15, 6, "edge"),
+  item("pool-fountain-jet", "poolParts", "Deck Fountain Jet", "Chorro de Fuente", 950, "each", "object", "water", "#4aa8bd", textures.water, 8, 1, "object"),
+  item("pool-sun-deck", "poolParts", "Tanning Ledge Lounger", "Camastro de Plataforma", 650, "each", "object", "furniture", "#eee6d7", textures.metal, 11, 0.65, "object"),
+
+  item("house-wall-panel", "building", "Exterior Wall Panel", "Panel de Muro Exterior", 1200, "each", "linear", "house", "#d6c3a1", textures.wall, 16, 3.2, "structure"),
+  item("house-window", "building", "Window Module", "Módulo de Ventana", 1100, "each", "object", "house", "#6ea6b2", textures.metal, 10, 1.4, "object"),
+  item("house-patio-door", "building", "Sliding Patio Door", "Puerta Corrediza", 3200, "each", "object", "house", "#55767d", textures.metal, 14, 1.3, "object"),
+  item("house-roof-extension", "building", "Patio Roof Extension", "Extensión de Techo", 5200, "each", "object", "house", "#6f6254", textures.wood, 24, 2.2, "structure"),
+  item("fence-cedar-panel", "building", "Cedar Fence Panel", "Panel de Cerca de Cedro", 185, "linearFt", "linear", "wall", "#8b5e3c", textures.wood, 16, 3.5, "edge"),
+  item("fence-block-panel", "building", "Block Fence Section", "Sección de Cerca de Bloque", 240, "linearFt", "linear", "wall", "#a58d73", textures.wall, 16, 3.5, "edge"),
+  item("gate-modern", "building", "Modern Yard Gate", "Puerta Moderna de Patio", 2200, "each", "object", "house", "#454b4d", textures.metal, 11, 1.3, "object"),
+  item("outdoor-shower", "building", "Outdoor Shower", "Ducha Exterior", 3800, "each", "object", "water", "#777d79", textures.metal, 10, 0.7, "object"),
+
+  item("dining-table", "furniture", "Outdoor Dining Table", "Mesa de Comedor Exterior", 1800, "each", "object", "furniture", "#8b6749", textures.wood, 16, 1.7, "object"),
+  item("sectional-sofa", "furniture", "Patio Sectional", "Sofá Seccional de Patio", 2800, "each", "object", "furniture", "#77706a", textures.wood, 20, 1.8, "object"),
+  item("chaise-lounge", "furniture", "Pool Chaise Lounge", "Camastro de Alberca", 480, "each", "object", "furniture", "#e3dacb", textures.metal, 10, 0.55, "object"),
+  item("cantilever-umbrella", "furniture", "Cantilever Umbrella", "Sombrilla Voladiza", 1100, "each", "object", "shade", "#c8a56a", textures.metal, 15, 1, "object"),
+  item("planter-box", "furniture", "Raised Planter Box", "Jardinera Elevada", 750, "each", "object", "furniture", "#865b39", textures.wood, 14, 2, "object"),
+  item("grill-cart", "furniture", "Freestanding Grill", "Parrilla Independiente", 1600, "each", "object", "kitchen", "#4f5557", textures.metal, 12, 1.5, "object"),
 ];

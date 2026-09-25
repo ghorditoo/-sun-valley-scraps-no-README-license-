@@ -32,7 +32,7 @@ function createMaterialObject(item: PlacedMaterialItem, yardWidth: number, yardL
   const group = new THREE.Group();
   const width = Math.max(0.8, (item.widthPct / 100) * yardWidth);
   const depth = Math.max(0.6, width / material.aspectRatio);
-  const color = Number.parseInt(material.swatchColor.slice(1), 16);
+  const color = Number.parseInt((item.colorOverride ?? material.swatchColor).slice(1), 16);
 
   if (material.visual === "pergola" || material.visual === "shade") {
     const height = 3.2;
@@ -56,6 +56,26 @@ function createMaterialObject(item: PlacedMaterialItem, yardWidth: number, yardL
     crown.position.y = Math.max(0.9, width * 0.7);
     crown.castShadow = true;
     group.add(crown);
+  } else if (material.visual === "pool") {
+    if (material.buildPiece === "edge") {
+      addBox(group, [width, 0.28, depth], [0, 0.14, 0], color);
+    } else {
+      const pool = new THREE.Mesh(
+        new THREE.BoxGeometry(width, material.placement === "object" ? 0.7 : 0.16, depth),
+        new THREE.MeshPhysicalMaterial({ color, roughness: 0.08, metalness: 0.15, transmission: 0.16, transparent: true, opacity: 0.88 }),
+      );
+      pool.position.y = material.placement === "object" ? 0.35 : 0.08;
+      pool.receiveShadow = true;
+      group.add(pool);
+    }
+  } else if (material.visual === "house") {
+    const height = material.buildPiece === "structure" ? 3.8 : 2.7;
+    addBox(group, [width, height, Math.max(0.18, depth * 0.18)], [0, height / 2, 0], color);
+  } else if (material.visual === "furniture") {
+    addBox(group, [width, 0.16, depth], [0, 0.9, 0], color);
+    for (const x of [-width * 0.38, width * 0.38]) {
+      for (const z of [-depth * 0.35, depth * 0.35]) addBox(group, [0.11, 0.85, 0.11], [x, 0.43, z], color);
+    }
   } else if (material.visual === "water" || material.visual === "fire") {
     const mesh = new THREE.Mesh(
       new THREE.CylinderGeometry(width / 2, width / 2, material.visual === "fire" ? 0.5 : 0.18, 32),
@@ -81,7 +101,7 @@ function createMaterialObject(item: PlacedMaterialItem, yardWidth: number, yardL
 
   group.position.set(
     (item.xPct / 100 - 0.5) * yardWidth,
-    0.08,
+    0.08 + (item.elevationFt ?? 0),
     (item.yPct / 100 - 0.5) * yardLength,
   );
   group.rotation.y = THREE.MathUtils.degToRad(-item.rotationDeg);
