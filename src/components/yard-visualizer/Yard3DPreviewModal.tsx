@@ -1,20 +1,24 @@
 "use client";
 
-import Image from "next/image";
 import { motion } from "framer-motion";
 import { X, Upload } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useTilt3D } from "@/lib/useTilt3D";
 import { materials } from "@/data/materials";
 import type { PlacedMaterialItem } from "@/lib/types";
+import { VirtualYardBackdrop, type VirtualBackdrop } from "./VirtualYardBackdrop";
 
 export function Yard3DPreviewModal({
   photoDataUrl,
+  designMode,
+  virtualBackdrop,
   placedItems,
   onClose,
   onSendToBooking,
 }: {
   photoDataUrl: string | null;
+  designMode: "photo" | "virtual";
+  virtualBackdrop: VirtualBackdrop;
   placedItems: PlacedMaterialItem[];
   onClose: () => void;
   onSendToBooking: () => void;
@@ -32,7 +36,7 @@ export function Yard3DPreviewModal({
     >
       <button
         onClick={onClose}
-        className="absolute right-5 top-5 text-white/80 hover:text-white"
+        className="absolute right-5 top-5 z-10 text-white/80 hover:text-white"
         aria-label={t.visualizer.close}
       >
         <X size={28} />
@@ -50,9 +54,11 @@ export function Yard3DPreviewModal({
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-            className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl shadow-2xl"
+            className="relative aspect-[4/3] w-full overflow-hidden rounded-lg border border-cyan-200/40 shadow-[0_30px_90px_rgba(6,182,212,0.2)]"
           >
-            {photoDataUrl && (
+            {designMode === "virtual" ? (
+              <VirtualYardBackdrop backdrop={virtualBackdrop} />
+            ) : photoDataUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={photoDataUrl}
@@ -60,14 +66,15 @@ export function Yard3DPreviewModal({
                 style={{ transform: "translateZ(0px)" }}
                 className="h-full w-full object-cover"
               />
-            )}
+            ) : null}
             {placedItems.map((item) => {
               const material = materials.find((m) => m.id === item.materialId);
               if (!material) return null;
               return (
                 <div
                   key={item.id}
-                  className="absolute rounded-lg border-2 border-white/80 shadow-lg"
+                  data-visual={material.visual}
+                  className="material-chip absolute rounded-lg border border-cyan-100/80 shadow-[0_10px_28px_rgba(0,0,0,0.28),0_0_16px_rgba(103,232,249,0.18)]"
                   style={{
                     left: `${item.xPct}%`,
                     top: `${item.yPct}%`,

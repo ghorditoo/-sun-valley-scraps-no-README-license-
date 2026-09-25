@@ -27,6 +27,7 @@ import { useBooking } from "@/components/booking/BookingContext";
 import { materials } from "@/data/materials";
 import type { Material, MaterialCategory, MaterialVisual, PlacedMaterialItem } from "@/lib/types";
 import { Yard3DPreviewModal } from "./Yard3DPreviewModal";
+import { VirtualYardBackdrop, type VirtualBackdrop } from "./VirtualYardBackdrop";
 
 const categories: MaterialCategory[] = [
   "pavers",
@@ -79,11 +80,12 @@ function MaterialThumb({ material }: { material: Material }) {
 
   return (
     <span
-      className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-black/10 shadow-inner"
+      data-visual={material.visual}
+      className="material-chip relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-black/10 shadow-inner"
       style={{ backgroundColor: material.swatchColor, backgroundImage: material.texture }}
     >
       <span className="absolute inset-0 bg-gradient-to-br from-white/25 via-transparent to-black/20" />
-      <Icon className="relative text-white drop-shadow-md" size={22} strokeWidth={1.8} />
+      <Icon className="material-icon relative text-white drop-shadow-md" size={22} strokeWidth={1.8} />
     </span>
   );
 }
@@ -103,6 +105,8 @@ export function YardVisualizer() {
   const [show3DPreview, setShow3DPreview] = useState(false);
   const [activeCategory, setActiveCategory] = useState<MaterialCategory | "all">("all");
   const [materialQuery, setMaterialQuery] = useState("");
+  const [designMode, setDesignMode] = useState<"photo" | "virtual">("virtual");
+  const [virtualBackdrop, setVirtualBackdrop] = useState<VirtualBackdrop>("desert");
 
   const selectedMaterial = materials.find((material) => material.id === selectedMaterialId);
   const normalizedQuery = materialQuery.trim().toLocaleLowerCase();
@@ -138,7 +142,10 @@ export function YardVisualizer() {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => setPhotoDataUrl(reader.result as string);
+    reader.onload = () => {
+      setPhotoDataUrl(reader.result as string);
+      setDesignMode("photo");
+    };
     reader.readAsDataURL(file);
   }
 
@@ -210,6 +217,8 @@ export function YardVisualizer() {
       service: "redesign",
       yardPlan: {
         photoDataUrl,
+        designMode,
+        virtualBackdrop,
         areaSqFt,
         items: placedItems,
         estimatedTotal,
@@ -228,12 +237,49 @@ export function YardVisualizer() {
         <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]">
           {/* Canvas */}
           <div>
+            <div className="mb-3 flex flex-col gap-3 rounded-lg border border-cyan-200/60 bg-[linear-gradient(135deg,rgba(236,254,255,0.92),rgba(240,253,244,0.96))] p-3 shadow-[0_10px_30px_-22px_rgba(8,145,178,0.75)] sm:flex-row sm:items-center sm:justify-between">
+              <div className="inline-flex rounded-lg border border-cyan-200 bg-white/80 p-1 shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => setDesignMode("virtual")}
+                  className={`rounded-md px-3 py-2 text-xs font-semibold transition ${designMode === "virtual" ? "bg-brand-700 text-white shadow" : "text-stone-600 hover:bg-cyan-50"}`}
+                >
+                  {t.visualizer.virtualMode}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => photoDataUrl ? setDesignMode("photo") : fileInputRef.current?.click()}
+                  className={`rounded-md px-3 py-2 text-xs font-semibold transition ${designMode === "photo" ? "bg-brand-700 text-white shadow" : "text-stone-600 hover:bg-cyan-50"}`}
+                >
+                  {t.visualizer.photoMode}
+                </button>
+              </div>
+
+              {designMode === "virtual" && (
+                <div className="flex items-center gap-2 overflow-x-auto">
+                  <span className="shrink-0 text-[11px] font-semibold uppercase text-cyan-800">{t.visualizer.sceneLabel}</span>
+                  {(["desert", "modern", "poolside"] as VirtualBackdrop[]).map((scene) => (
+                    <button
+                      type="button"
+                      key={scene}
+                      onClick={() => setVirtualBackdrop(scene)}
+                      className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition ${virtualBackdrop === scene ? "border-cyan-600 bg-cyan-600 text-white shadow-[0_0_14px_rgba(8,145,178,0.35)]" : "border-cyan-200 bg-white/70 text-cyan-900 hover:border-cyan-400"}`}
+                    >
+                      {t.visualizer.scenes[scene]}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div
               ref={canvasRef}
               onClick={handleCanvasClick}
-              className="relative aspect-[4/3] w-full cursor-crosshair overflow-hidden rounded-2xl border-2 border-dashed border-stone-300 bg-stone-100"
+              className="relative aspect-[4/3] w-full cursor-crosshair overflow-hidden rounded-lg border border-cyan-200 bg-stone-900 shadow-[0_24px_60px_-30px_rgba(8,145,178,0.65)]"
             >
-              {photoDataUrl ? (
+              {designMode === "virtual" ? (
+                <VirtualYardBackdrop backdrop={virtualBackdrop} />
+              ) : photoDataUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={photoDataUrl} alt="Your yard" className="h-full w-full object-cover" />
               ) : (
@@ -272,8 +318,9 @@ export function YardVisualizer() {
                     }}
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1, rotate: item.rotationDeg }}
-                    className={`group absolute flex items-center justify-center rounded-lg border-2 shadow-lg ${
-                      isSelected ? "border-brand-500 ring-2 ring-brand-400" : "border-white/80"
+                    data-visual={material.visual}
+                    className={`material-chip group absolute flex items-center justify-center rounded-lg border-2 shadow-lg ${
+                      isSelected ? "material-selected border-cyan-200 ring-2 ring-cyan-300" : "border-white/80"
                     }`}
                     style={{
                       left: `${item.xPct}%`,
@@ -290,7 +337,7 @@ export function YardVisualizer() {
                     }}
                   >
                     {material.placement === "object" && (
-                      <MaterialIcon className="pointer-events-none text-white/90 drop-shadow-lg" size="38%" strokeWidth={1.5} />
+                      <MaterialIcon className="material-icon pointer-events-none text-white/90 drop-shadow-lg" size="38%" strokeWidth={1.5} />
                     )}
                     {isSelected && (
                       <div className="absolute -top-10 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full bg-stone-900/90 px-1.5 py-1 shadow-xl">
@@ -425,7 +472,7 @@ export function YardVisualizer() {
                     onClick={() => setSelectedMaterialId(material.id)}
                     className={`flex min-h-24 items-center gap-3 rounded-lg border p-2.5 text-left transition ${
                       selectedMaterialId === material.id
-                        ? "border-brand-600 bg-brand-50 shadow-[0_0_0_2px_rgba(5,150,105,0.12)]"
+                        ? "material-selected border-cyan-500 bg-cyan-50 shadow-[0_0_0_2px_rgba(6,182,212,0.14)]"
                         : "border-stone-200 bg-white hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-sm"
                     }`}
                   >
@@ -524,6 +571,8 @@ export function YardVisualizer() {
         {show3DPreview && (
           <Yard3DPreviewModal
             photoDataUrl={photoDataUrl}
+            designMode={designMode}
+            virtualBackdrop={virtualBackdrop}
             placedItems={placedItems}
             onClose={() => setShow3DPreview(false)}
             onSendToBooking={handleSendToBooking}

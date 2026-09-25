@@ -51,9 +51,18 @@ export const dictionary = {
     visualizer: {
       heading: "Build Your Yard",
       subheading:
-        "Upload a photo of your space, then drag and drop real materials to design your dream yard and get an instant estimate.",
+        "Start from a virtual lot or upload your own yard, then build with real materials and get an instant project estimate.",
       uploadCta: "Upload Your Yard Photo",
       uploadHint: "JPG or PNG, max 10MB",
+      photoMode: "My Yard Photo",
+      virtualMode: "Virtual Lot",
+      virtualHint: "Start from scratch in a generated backyard",
+      sceneLabel: "Lot style",
+      scenes: {
+        desert: "Desert",
+        modern: "Modern",
+        poolside: "Poolside",
+      },
       dockTitle: "Material Dock",
       categories: {
         pavers: "Pavers",
@@ -72,7 +81,7 @@ export const dictionary = {
       allMaterials: "All",
       inventoryCount: "options",
       selectedMaterial: "Selected",
-      placeHint: "Click anywhere on your yard photo to place it",
+      placeHint: "Click anywhere on the design to place it",
       priceUnits: {
         sqft: "/ sq ft",
         linearFt: "/ linear ft",
@@ -207,9 +216,18 @@ export const dictionary = {
     visualizer: {
       heading: "Diseña Tu Patio",
       subheading:
-        "Sube una foto de tu espacio, luego arrastra materiales reales para diseñar el patio de tus sueños y obtén un estimado al instante.",
+        "Comienza con un lote virtual o sube tu propio patio, luego diseña con materiales reales y obtén un estimado al instante.",
       uploadCta: "Sube la Foto de Tu Patio",
       uploadHint: "JPG o PNG, máx 10MB",
+      photoMode: "Foto de Mi Patio",
+      virtualMode: "Lote Virtual",
+      virtualHint: "Comienza desde cero en un patio generado",
+      sceneLabel: "Estilo del lote",
+      scenes: {
+        desert: "Desierto",
+        modern: "Moderno",
+        poolside: "Junto a Alberca",
+      },
       dockTitle: "Materiales Disponibles",
       categories: {
         pavers: "Adoquines",
@@ -228,7 +246,7 @@ export const dictionary = {
       allMaterials: "Todos",
       inventoryCount: "opciones",
       selectedMaterial: "Seleccionado",
-      placeHint: "Haz clic en cualquier lugar de la foto para colocarlo",
+      placeHint: "Haz clic en cualquier lugar del diseño para colocarlo",
       priceUnits: {
         sqft: "/ pie²",
         linearFt: "/ pie lineal",

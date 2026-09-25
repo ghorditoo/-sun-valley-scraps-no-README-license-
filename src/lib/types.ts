@@ -42,6 +42,8 @@ export type MaterialVisual =
 
 export type YardPlan = {
   photoDataUrl: string | null;
+  designMode?: "photo" | "virtual";
+  virtualBackdrop?: "desert" | "modern" | "poolside";
   areaSqFt: number;
   items: PlacedMaterialItem[];
   estimatedTotal: number;
