@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Upload,
@@ -35,10 +35,13 @@ import type {
   MaterialCategory,
   MaterialVisual,
   PlacedMaterialItem,
+  PropertyModel,
   YardDesignMode,
   YardMeasurements,
+  YardPlan,
   YardScanPoint,
 } from "@/lib/types";
+import { renderExplodedSnapshot } from "./explodedScene";
 import { Yard3DPreviewModal } from "./Yard3DPreviewModal";
 import type { VirtualBackdrop } from "./VirtualYardBackdrop";
 import { YardGameWorkspace } from "./YardGameWorkspace";
@@ -143,9 +146,10 @@ export function YardVisualizer() {
     exteriorColor: "#d6c3a1",
   });
   const [buildMode, setBuildMode] = useState<"quick" | "piece">("piece");
-  const [workspaceView, setWorkspaceView] = useState<"orbit" | "drone">("orbit");
+  const [workspaceView, setWorkspaceView] = useState<"orbit" | "drone" | "firstPerson">("orbit");
   const [propertyAddress, setPropertyAddress] = useState("");
-  const [addressStaged, setAddressStaged] = useState(false);
+  const [propertyModel, setPropertyModel] = useState<PropertyModel>();
+  const [propertyLookupStatus, setPropertyLookupStatus] = useState<"idle" | "loading" | "found" | "fallback">("idle");
   const [workspaceSeed, setWorkspaceSeed] = useState(0);
 
   useEffect(() => {
@@ -249,6 +253,27 @@ export function YardVisualizer() {
     });
   }
 
+  async function stageProperty() {
+    if (!propertyAddress.trim()) return;
+    setPropertyLookupStatus("loading");
+    try {
+      const response = await fetch("/api/property/lookup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address: propertyAddress }),
+      });
+      if (!response.ok) throw new Error("Property lookup failed");
+      const model = await response.json() as PropertyModel;
+      setPropertyModel(model);
+      setMeasurements((current) => ({ ...current, houseWidthFt: model.widthFt, houseDepthFt: model.depthFt }));
+      setPropertyLookupStatus("found");
+    } catch {
+      setPropertyModel(undefined);
+      setPropertyLookupStatus("fallback");
+    }
+    setWorkspaceSeed((value) => value + 1);
+  }
+
   function handleCanvasClick(e: React.MouseEvent<HTMLDivElement>) {
     if (!canvasRef.current) return;
     const rect = canvasRef.current.getBoundingClientRect();
@@ -298,8 +323,14 @@ export function YardVisualizer() {
     setSelectedItemId(newItemId);
   }
 
-  function updateItem(id: string, patch: Partial<PlacedMaterialItem>) {
-    commit(placedItems.map((item) => (item.id === id ? { ...item, ...patch } : item)));
+  function updateItem(id: string, patch: Partial<PlacedMaterialItem>, recordHistory = true) {
+    const next = placedItems.map((item) => (item.id === id ? { ...item, ...patch } : item));
+    if (recordHistory) commit(next);
+    else setPlacedItems(next);
+  }
+
+  function beginContinuousEdit() {
+    setHistory((previous) => [...previous, placedItems]);
   }
 
   function removeItem(id: string) {
@@ -335,23 +366,24 @@ export function YardVisualizer() {
     return sum + material.price * areaSqFt * footprintShare;
   }, 0);
 
+  const currentPlan = useMemo<YardPlan>(() => ({
+    photoDataUrl,
+    designMode,
+    virtualBackdrop,
+    scanPoints,
+    measurements,
+    buildMode,
+    propertyAddress,
+    propertyModel,
+    areaSqFt,
+    items: placedItems,
+    estimatedTotal,
+  }), [photoDataUrl, designMode, virtualBackdrop, scanPoints, measurements, buildMode, propertyAddress, propertyModel, areaSqFt, placedItems, estimatedTotal]);
+
   function handleSendToBooking() {
     setShow3DPreview(false);
-    openBooking({
-      service: "redesign",
-      yardPlan: {
-        photoDataUrl,
-        designMode,
-        virtualBackdrop,
-        scanPoints,
-        measurements,
-        buildMode,
-        propertyAddress,
-        areaSqFt,
-        items: placedItems,
-        estimatedTotal,
-      },
-    });
+    const explodedRenderDataUrl = renderExplodedSnapshot(currentPlan) ?? undefined;
+    openBooking({ service: "redesign", yardPlan: { ...currentPlan, explodedRenderDataUrl } });
   }
 
   return (
@@ -362,7 +394,7 @@ export function YardVisualizer() {
           <p className="mt-3 text-stone-600">{t.visualizer.subheading}</p>
         </div>
 
-        <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]">
+        <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
           {/* Canvas */}
           <div>
             <div className="mb-3 flex flex-col gap-3 rounded-lg border border-cyan-200/60 bg-[linear-gradient(135deg,rgba(236,254,255,0.92),rgba(240,253,244,0.96))] p-3 shadow-[0_10px_30px_-22px_rgba(8,145,178,0.75)] sm:flex-row sm:items-center sm:justify-between">
@@ -451,17 +483,18 @@ export function YardVisualizer() {
                   {t.visualizer.pieceBuild}
                 </button>
               </div>
-              {buildMode === "piece" && (
-                <div className="flex items-center gap-2">
-                  <span className="hidden text-[11px] font-semibold uppercase text-cyan-200 sm:inline">{t.visualizer.snapHint}</span>
-                  <button type="button" onClick={() => setWorkspaceView("orbit")} className={`rounded px-2.5 py-1 text-xs font-semibold ${workspaceView === "orbit" ? "bg-cyan-400 text-stone-950" : "bg-white/10 text-stone-300"}`}>
-                    {t.visualizer.orbitView}
-                  </button>
-                  <button type="button" onClick={() => setWorkspaceView("drone")} className={`rounded px-2.5 py-1 text-xs font-semibold ${workspaceView === "drone" ? "bg-cyan-400 text-stone-950" : "bg-white/10 text-stone-300"}`}>
-                    {t.visualizer.droneView}
-                  </button>
-                </div>
-              )}
+              <div className="flex items-center gap-1.5 overflow-x-auto">
+                {buildMode === "piece" && <span className="hidden shrink-0 text-[11px] font-semibold uppercase text-cyan-200 xl:inline">{t.visualizer.snapHint}</span>}
+                <button type="button" onClick={() => setWorkspaceView("orbit")} className={`shrink-0 rounded px-2.5 py-1 text-xs font-semibold ${workspaceView === "orbit" ? "bg-cyan-400 text-stone-950" : "bg-white/10 text-stone-300"}`}>
+                  {t.visualizer.orbitView}
+                </button>
+                <button type="button" onClick={() => setWorkspaceView("drone")} className={`shrink-0 rounded px-2.5 py-1 text-xs font-semibold ${workspaceView === "drone" ? "bg-cyan-400 text-stone-950" : "bg-white/10 text-stone-300"}`}>
+                  {t.visualizer.droneView}
+                </button>
+                <button type="button" onClick={() => setWorkspaceView("firstPerson")} className={`shrink-0 rounded px-2.5 py-1 text-xs font-semibold ${workspaceView === "firstPerson" ? "bg-cyan-400 text-stone-950" : "bg-white/10 text-stone-300"}`}>
+                  {t.visualizer.firstPersonView}
+                </button>
+              </div>
             </div>
 
             {isGameWorkspace && (
@@ -469,23 +502,26 @@ export function YardVisualizer() {
                 className="mb-3 flex flex-col gap-2 rounded-lg border border-stone-200 bg-white p-3 sm:flex-row sm:items-end"
                 onSubmit={(event) => {
                   event.preventDefault();
-                  if (!propertyAddress.trim()) return;
-                  setAddressStaged(true);
-                  setWorkspaceSeed((value) => value + 1);
+                  void stageProperty();
                 }}
               >
                 <label className="flex-1 text-xs font-semibold text-stone-600">
                   {t.visualizer.propertyAddress}
                   <span className="relative mt-1 block">
                     <MapPin className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={15} />
-                    <input value={propertyAddress} onChange={(event) => { setPropertyAddress(event.target.value); setAddressStaged(false); }} placeholder={t.visualizer.addressPlaceholder} className="w-full rounded-lg border border-stone-300 py-2 pl-9 pr-3 text-sm outline-none focus:border-cyan-500" />
+                    <input value={propertyAddress} onChange={(event) => { setPropertyAddress(event.target.value); setPropertyLookupStatus("idle"); }} placeholder={t.visualizer.addressPlaceholder} className="w-full rounded-lg border border-stone-300 py-2 pl-9 pr-3 text-sm outline-none focus:border-cyan-500" />
                   </span>
                 </label>
-                <button type="submit" className="flex items-center justify-center gap-2 rounded-lg bg-stone-900 px-4 py-2 text-xs font-bold text-white hover:bg-stone-800">
+                <button type="submit" disabled={propertyLookupStatus === "loading"} className="flex items-center justify-center gap-2 rounded-lg bg-stone-900 px-4 py-2 text-xs font-bold text-white hover:bg-stone-800 disabled:opacity-50">
                   <Gamepad2 size={15} />
                   {t.visualizer.stageProperty}
                 </button>
-                {addressStaged && <span className="text-xs font-medium text-brand-700 sm:max-w-36">{t.visualizer.addressStaged}</span>}
+                {propertyLookupStatus !== "idle" && (
+                  <span className={`text-xs font-medium sm:max-w-44 ${propertyLookupStatus === "fallback" ? "text-amber-700" : "text-brand-700"}`}>
+                    {propertyLookupStatus === "loading" ? t.visualizer.addressSearching : propertyLookupStatus === "found" ? t.visualizer.addressFound : t.visualizer.addressFallback}
+                    {propertyLookupStatus === "found" && <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" className="mt-1 block underline">{t.visualizer.osmAttribution}</a>}
+                  </span>
+                )}
               </form>
             )}
 
@@ -550,8 +586,10 @@ export function YardVisualizer() {
                   backdrop={designMode === "manual" ? "modern" : virtualBackdrop}
                   cameraView={workspaceView}
                   snapEnabled={buildMode === "piece"}
+                  propertyModel={propertyModel}
                   onPlace={placeSelectedMaterial}
                   onSelect={setSelectedItemId}
+                  onTransform={updateItem}
                 />
               ) : designMode === "camera" ? (
                 <>
@@ -727,25 +765,55 @@ export function YardVisualizer() {
             )}
 
             {selectedPlacedItem && selectedPlacedMaterial && (
-              <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-cyan-200 bg-stone-950 px-3 py-2.5 text-white shadow-[0_12px_35px_-25px_rgba(6,182,212,0.8)]">
-                <span className="text-xs font-semibold text-cyan-100">{t.visualizer.pieceColor}</span>
-                {selectedPlacedMaterial.colorOptions.map((color) => (
-                  <button
-                    type="button"
-                    key={color}
-                    aria-label={`${t.visualizer.pieceColor} ${color}`}
-                    onClick={() => updateItem(selectedPlacedItem.id, { colorOverride: color })}
-                    className={`h-7 w-7 rounded-full border-2 ${selectedPlacedItem.colorOverride === color ? "scale-110 border-cyan-200 shadow-[0_0_12px_rgba(103,232,249,0.8)]" : "border-white/35"}`}
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-                <span className="ml-auto text-xs text-stone-300">{(selectedPlacedItem.elevationFt ?? 0).toFixed(1)} ft</span>
-                <button type="button" aria-label={t.visualizer.lowerPiece} onClick={() => updateItem(selectedPlacedItem.id, { elevationFt: Math.max(0, (selectedPlacedItem.elevationFt ?? 0) - 0.5) })} className="flex h-7 w-7 items-center justify-center rounded bg-white/10 hover:bg-white/20">
-                  <Minus size={14} />
-                </button>
-                <button type="button" aria-label={t.visualizer.raisePiece} onClick={() => updateItem(selectedPlacedItem.id, { elevationFt: Math.min(8, (selectedPlacedItem.elevationFt ?? 0) + 0.5) })} className="flex h-7 w-7 items-center justify-center rounded bg-cyan-400 text-stone-950 hover:bg-cyan-300">
-                  <Plus size={14} />
-                </button>
+              <div className="mt-3 rounded-lg border border-cyan-200 bg-stone-950 p-4 text-white shadow-[0_12px_35px_-25px_rgba(6,182,212,0.8)]">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase text-cyan-300">{t.visualizer.selectedPiece}</p>
+                    <p className="text-sm font-bold text-white">{materialName(selectedPlacedMaterial)}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={() => duplicateItem(selectedPlacedItem)} aria-label={t.visualizer.duplicate} className="flex h-8 w-8 items-center justify-center rounded bg-white/10 hover:bg-white/20"><Copy size={15} /></button>
+                    <button type="button" onClick={() => removeItem(selectedPlacedItem.id)} aria-label={t.visualizer.removeItem} className="flex h-8 w-8 items-center justify-center rounded bg-red-500/20 text-red-200 hover:bg-red-500/35"><Trash2 size={15} /></button>
+                  </div>
+                </div>
+                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {([
+                    ["xPct", t.visualizer.positionX, 0, 95, 1, selectedPlacedItem.xPct],
+                    ["yPct", t.visualizer.positionY, 0, 95, 1, selectedPlacedItem.yPct],
+                    ["widthPct", t.visualizer.pieceSize, 4, 50, 1, selectedPlacedItem.widthPct],
+                    ["rotationDeg", t.visualizer.pieceRotation, 0, 359, 1, selectedPlacedItem.rotationDeg],
+                    ["elevationFt", t.visualizer.pieceElevation, 0, 8, 0.25, selectedPlacedItem.elevationFt ?? 0],
+                  ] as const).map(([key, label, min, max, step, value]) => (
+                    <label key={key} className="text-[11px] text-stone-300">
+                      <span className="flex justify-between"><span>{label}</span><span className="font-mono text-cyan-200">{Number(value).toFixed(key === "elevationFt" ? 2 : 0)}{key === "rotationDeg" ? "°" : key === "elevationFt" ? " ft" : "%"}</span></span>
+                      <input
+                        type="range"
+                        min={min}
+                        max={max}
+                        step={step}
+                        value={value}
+                        onPointerDown={beginContinuousEdit}
+                        onChange={(event) => updateItem(selectedPlacedItem.id, { [key]: Number(event.target.value) }, false)}
+                        className="mt-2 w-full accent-cyan-400"
+                      />
+                    </label>
+                  ))}
+                  <div className="text-[11px] text-stone-300">
+                    <span>{t.visualizer.pieceColor}</span>
+                    <div className="mt-2 flex gap-2">
+                      {selectedPlacedMaterial.colorOptions.map((color) => (
+                        <button
+                          type="button"
+                          key={color}
+                          aria-label={`${t.visualizer.pieceColor} ${color}`}
+                          onClick={() => updateItem(selectedPlacedItem.id, { colorOverride: color })}
+                          className={`h-8 w-8 rounded-full border-2 ${selectedPlacedItem.colorOverride === color ? "scale-110 border-cyan-200 shadow-[0_0_12px_rgba(103,232,249,0.8)]" : "border-white/35"}`}
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -906,7 +974,9 @@ export function YardVisualizer() {
             designMode={designMode}
             virtualBackdrop={virtualBackdrop}
             measurements={measurements}
+            propertyModel={propertyModel}
             placedItems={placedItems}
+            plan={currentPlan}
             onClose={() => setShow3DPreview(false)}
             onSendToBooking={handleSendToBooking}
           />

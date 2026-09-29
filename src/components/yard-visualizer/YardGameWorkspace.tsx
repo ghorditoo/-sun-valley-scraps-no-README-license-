@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import type { Material, PlacedMaterialItem, YardMeasurements } from "@/lib/types";
+import type { Material, PlacedMaterialItem, PropertyModel, YardMeasurements } from "@/lib/types";
 import type { VirtualBackdrop } from "./VirtualYardBackdrop";
 import { createMaterialObject } from "./YardThreeScene";
 
@@ -21,29 +21,37 @@ export function YardGameWorkspace({
   backdrop,
   cameraView,
   snapEnabled,
+  propertyModel,
   onPlace,
   onSelect,
+  onTransform,
 }: {
   placedItems: PlacedMaterialItem[];
   selectedMaterial?: Material;
   selectedItemId: string | null;
   measurements: YardMeasurements;
   backdrop: VirtualBackdrop;
-  cameraView: "orbit" | "drone";
+  cameraView: "orbit" | "drone" | "firstPerson";
   snapEnabled: boolean;
+  propertyModel?: PropertyModel;
   onPlace: (xPct: number, yPct: number) => void;
   onSelect: (id: string | null) => void;
+  onTransform: (id: string, patch: Partial<PlacedMaterialItem>) => void;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const onPlaceRef = useRef(onPlace);
   const onSelectRef = useRef(onSelect);
+  const onTransformRef = useRef(onTransform);
   const selectedMaterialRef = useRef(selectedMaterial);
   const selectedItemIdRef = useRef(selectedItemId);
   const interactiveObjectsRef = useRef<THREE.Object3D[]>([]);
-  onPlaceRef.current = onPlace;
-  onSelectRef.current = onSelect;
-  selectedMaterialRef.current = selectedMaterial;
-  selectedItemIdRef.current = selectedItemId;
+  useLayoutEffect(() => {
+    onPlaceRef.current = onPlace;
+    onSelectRef.current = onSelect;
+    onTransformRef.current = onTransform;
+    selectedMaterialRef.current = selectedMaterial;
+    selectedItemIdRef.current = selectedItemId;
+  });
 
   useEffect(() => {
     const canvas = hostRef.current?.querySelector("canvas");
@@ -80,6 +88,7 @@ export function YardGameWorkspace({
 
     const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 180);
     if (cameraView === "drone") camera.position.set(0, Math.max(28, yardLength * 1.1), 0.1);
+    else if (cameraView === "firstPerson") camera.position.set(0, 1.7, yardLength * 0.34);
     else camera.position.set(yardWidth * 0.72, Math.max(12, yardLength * 0.52), yardLength * 0.82);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -94,6 +103,7 @@ export function YardGameWorkspace({
     host.appendChild(renderer.domElement);
 
     const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enabled = cameraView !== "firstPerson";
     controls.enableDamping = true;
     controls.enablePan = true;
     controls.maxPolarAngle = cameraView === "drone" ? Math.PI / 3.2 : Math.PI / 2.04;
@@ -131,11 +141,31 @@ export function YardGameWorkspace({
 
     const houseWidth = Math.min(measurements.houseWidthFt, yardWidth * 0.9);
     const houseDepth = Math.min(measurements.houseDepthFt, yardLength * 0.45);
+    let houseGeometry: THREE.BufferGeometry;
+    let houseTargetY: number;
+    if (propertyModel?.footprint.length && propertyModel.footprint.length >= 3) {
+      const shape = new THREE.Shape();
+      propertyModel.footprint.forEach((point, index) => {
+        const x = (point.xPct / 100 - 0.5) * houseWidth;
+        const y = (point.yPct / 100 - 0.5) * houseDepth;
+        if (index === 0) shape.moveTo(x, y);
+        else shape.lineTo(x, y);
+      });
+      shape.closePath();
+      houseGeometry = new THREE.ExtrudeGeometry(shape, {
+        depth: Math.max(5.5, propertyModel.heightFt),
+        bevelEnabled: false,
+      });
+      houseGeometry.rotateX(-Math.PI / 2);
+      houseTargetY = 0;
+    } else {
+      houseGeometry = new THREE.BoxGeometry(houseWidth, 5.5, houseDepth);
+      houseTargetY = 2.75;
+    }
     const house = new THREE.Mesh(
-      new THREE.BoxGeometry(houseWidth, 5.5, houseDepth),
+      houseGeometry,
       new THREE.MeshStandardMaterial({ color: measurements.exteriorColor, roughness: 0.78 }),
     );
-    const houseTargetY = 2.75;
     house.position.set(0, houseTargetY + 10, -yardLength / 2 + houseDepth / 2);
     house.castShadow = true;
     house.receiveShadow = true;
@@ -174,6 +204,8 @@ export function YardGameWorkspace({
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
     let pointerStart = { x: 0, y: 0 };
+    let draggedObject: THREE.Object3D | null = null;
+    let draggedItemId: string | null = null;
     const setPointer = (event: PointerEvent) => {
       const rect = renderer.domElement.getBoundingClientRect();
       pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -182,9 +214,53 @@ export function YardGameWorkspace({
     const handlePointerDown = (event: PointerEvent) => {
       renderer.domElement.focus();
       pointerStart = { x: event.clientX, y: event.clientY };
+      if (cameraView === "firstPerson" && !selectedMaterialRef.current) {
+        void renderer.domElement.requestPointerLock();
+        return;
+      }
+      if (selectedMaterialRef.current) return;
+      setPointer(event);
+      raycaster.setFromCamera(pointer, camera);
+      const hit = raycaster.intersectObjects(interactiveObjects, true)[0];
+      if (!hit) return;
+      let target: THREE.Object3D | null = hit.object;
+      while (target && !target.userData.itemId) target = target.parent;
+      if (!target?.userData.itemId) return;
+      draggedObject = target;
+      draggedItemId = target.userData.itemId as string;
+      controls.enabled = false;
+      onSelectRef.current(draggedItemId);
+    };
+    const handlePointerMove = (event: PointerEvent) => {
+      if (!draggedObject || !draggedItemId) return;
+      setPointer(event);
+      raycaster.setFromCamera(pointer, camera);
+      const hit = raycaster.intersectObject(ground)[0];
+      if (!hit) return;
+      const rawXPct = (hit.point.x / yardWidth + 0.5) * 100;
+      const rawYPct = (hit.point.z / yardLength + 0.5) * 100;
+      const xPct = snapEnabled ? Math.round(rawXPct / 5) * 5 : rawXPct;
+      const yPct = snapEnabled ? Math.round(rawYPct / 5) * 5 : rawYPct;
+      draggedObject.position.x = (Math.max(0, Math.min(95, xPct)) / 100 - 0.5) * yardWidth;
+      draggedObject.position.z = (Math.max(0, Math.min(95, yPct)) / 100 - 0.5) * yardLength;
     };
     const handlePointerUp = (event: PointerEvent) => {
-      if (Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y) > 6) return;
+      const moved = Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y) > 6;
+      if (draggedObject && draggedItemId) {
+        controls.enabled = cameraView !== "firstPerson";
+        if (!moved) {
+          draggedObject = null;
+          draggedItemId = null;
+          return;
+        }
+        const xPct = Math.max(0, Math.min(95, (draggedObject.position.x / yardWidth + 0.5) * 100));
+        const yPct = Math.max(0, Math.min(95, (draggedObject.position.z / yardLength + 0.5) * 100));
+        onTransformRef.current(draggedItemId, { xPct, yPct });
+        draggedObject = null;
+        draggedItemId = null;
+        return;
+      }
+      if (moved) return;
       setPointer(event);
       raycaster.setFromCamera(pointer, camera);
       if (selectedMaterialRef.current) {
@@ -209,15 +285,35 @@ export function YardGameWorkspace({
       onSelectRef.current(target?.userData.itemId ?? null);
     };
     renderer.domElement.addEventListener("pointerdown", handlePointerDown);
+    renderer.domElement.addEventListener("pointermove", handlePointerMove);
     renderer.domElement.addEventListener("pointerup", handlePointerUp);
+    const handleMouseMove = (event: MouseEvent) => {
+      if (cameraView !== "firstPerson" || document.pointerLockElement !== renderer.domElement) return;
+      camera.rotation.order = "YXZ";
+      camera.rotation.y -= event.movementX * 0.0022;
+      camera.rotation.x = Math.max(-1.25, Math.min(1.25, camera.rotation.x - event.movementY * 0.0022));
+    };
+    document.addEventListener("mousemove", handleMouseMove);
     const handleKeyDown = (event: KeyboardEvent) => {
       const distance = event.shiftKey ? 2 : 0.8;
       if (!["KeyW", "KeyA", "KeyS", "KeyD", "KeyQ", "KeyE"].includes(event.code)) return;
       event.preventDefault();
-      if (event.code === "KeyW") camera.position.z -= distance;
-      if (event.code === "KeyS") camera.position.z += distance;
-      if (event.code === "KeyA") camera.position.x -= distance;
-      if (event.code === "KeyD") camera.position.x += distance;
+      if (cameraView === "firstPerson") {
+        const forward = new THREE.Vector3();
+        camera.getWorldDirection(forward);
+        forward.y = 0;
+        forward.normalize();
+        const right = new THREE.Vector3().crossVectors(forward, camera.up).normalize();
+        if (event.code === "KeyW") camera.position.addScaledVector(forward, distance);
+        if (event.code === "KeyS") camera.position.addScaledVector(forward, -distance);
+        if (event.code === "KeyA") camera.position.addScaledVector(right, -distance);
+        if (event.code === "KeyD") camera.position.addScaledVector(right, distance);
+      } else {
+        if (event.code === "KeyW") camera.position.z -= distance;
+        if (event.code === "KeyS") camera.position.z += distance;
+        if (event.code === "KeyA") camera.position.x -= distance;
+        if (event.code === "KeyD") camera.position.x += distance;
+      }
       if (event.code === "KeyQ") camera.position.y += distance;
       if (event.code === "KeyE") camera.position.y = Math.max(3, camera.position.y - distance);
     };
@@ -255,8 +351,11 @@ export function YardGameWorkspace({
       cancelAnimationFrame(frame);
       resizeObserver.disconnect();
       renderer.domElement.removeEventListener("pointerdown", handlePointerDown);
+      renderer.domElement.removeEventListener("pointermove", handlePointerMove);
       renderer.domElement.removeEventListener("pointerup", handlePointerUp);
       renderer.domElement.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("mousemove", handleMouseMove);
+      if (document.pointerLockElement === renderer.domElement) document.exitPointerLock();
       controls.dispose();
       interactiveObjectsRef.current = [];
       scene.traverse((object) => {
@@ -272,7 +371,7 @@ export function YardGameWorkspace({
       renderer.dispose();
       renderer.domElement.remove();
     };
-  }, [backdrop, cameraView, measurements, placedItems, snapEnabled]);
+  }, [backdrop, cameraView, measurements, placedItems, propertyModel, snapEnabled]);
 
   return <div ref={hostRef} className="h-full w-full" data-testid="yard-game-workspace" />;
 }
