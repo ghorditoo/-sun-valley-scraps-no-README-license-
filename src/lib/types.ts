@@ -27,6 +27,17 @@ export type YardMeasurements = {
   exteriorColor: string;
 };
 
+export type PropertyModel = {
+  displayName: string;
+  latitude: number;
+  longitude: number;
+  footprint: YardScanPoint[];
+  heightFt: number;
+  widthFt: number;
+  depthFt: number;
+  source: "OpenStreetMap";
+};
+
 export type MaterialCategory =
   | "pavers"
   | "stone"
@@ -71,9 +82,11 @@ export type YardPlan = {
   measurements?: YardMeasurements;
   buildMode?: "quick" | "piece";
   propertyAddress?: string;
+  propertyModel?: PropertyModel;
   areaSqFt: number;
   items: PlacedMaterialItem[];
   estimatedTotal: number;
+  explodedRenderDataUrl?: string;
 };
 
 export type BookingPrefill = {

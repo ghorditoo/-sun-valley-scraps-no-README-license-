@@ -1,6 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
+import { ServiceType, VisitType } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { sendDesignNotification } from "@/lib/notify";
 import { getOrCreateStripeCustomer } from "@/lib/stripe";
+import type { YardPlan } from "@/lib/types";
 
 // POST /api/bookings
 // Creates (or reuses) a Client record and a Booking in PENDING_DEPOSIT status.
@@ -27,6 +30,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    // The form sends lowercase values; the database enums are uppercase.
+    const serviceType = String(service).toUpperCase() as ServiceType;
+    const visit = String(visitType).toUpperCase() as VisitType;
+    if (!Object.values(ServiceType).includes(serviceType) || !Object.values(VisitType).includes(visit)) {
+      return NextResponse.json({ error: "Invalid service or visit type" }, { status: 400 });
+    }
+
+    // Only keep a render that is a real inline image of reasonable size.
+    const plan = yardPlan as YardPlan | null | undefined;
+    if (plan?.explodedRenderDataUrl && (!/^data:image\/(jpeg|png);base64,/.test(plan.explodedRenderDataUrl) || plan.explodedRenderDataUrl.length > 4_000_000)) {
+      delete plan.explodedRenderDataUrl;
+    }
+
     const client = await prisma.client.upsert({
       where: { email },
       update: { name, phone },
@@ -34,12 +50,17 @@ export async function POST(req: NextRequest) {
     });
 
     // Ensure the client has a Stripe customer for saved-card milestone/autopay billing.
+    // A Stripe outage shouldn't lose the booking or the client's design.
     if (!client.stripeCustomerId) {
-      const customer = await getOrCreateStripeCustomer({ email, name });
-      await prisma.client.update({
-        where: { id: client.id },
-        data: { stripeCustomerId: customer.id },
-      });
+      try {
+        const customer = await getOrCreateStripeCustomer({ email, name });
+        await prisma.client.update({
+          where: { id: client.id },
+          data: { stripeCustomerId: customer.id },
+        });
+      } catch (stripeErr) {
+        console.error("Stripe customer creation failed; saving booking anyway", stripeErr);
+      }
     }
 
     // Attribute a referral if this is a brand-new client who used a referral link/code.
@@ -61,16 +82,29 @@ export async function POST(req: NextRequest) {
     const booking = await prisma.booking.create({
       data: {
         clientId: client.id,
-        service,
-        visitType,
+        service: serviceType,
+        visitType: visit,
         scheduledDate: new Date(scheduledDate),
         timeSlot,
         address,
         notes,
         photoUrls: photoUrls ?? [],
-        yardPlanJson: yardPlan ?? undefined,
+        yardPlanJson: plan ?? undefined,
       },
     });
+
+    if (plan) {
+      after(() =>
+        sendDesignNotification({
+          bookingId: booking.id,
+          clientName: name,
+          clientEmail: email,
+          clientPhone: phone,
+          address,
+          plan,
+        }).catch((notifyErr) => console.error("Design notification failed", notifyErr)),
+      );
+    }
 
     return NextResponse.json({ bookingId: booking.id, clientId: client.id }, { status: 201 });
   } catch (err) {

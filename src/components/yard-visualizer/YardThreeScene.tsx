@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { materials } from "@/data/materials";
-import type { MaterialVisual, PlacedMaterialItem, YardMeasurements } from "@/lib/types";
+import type { MaterialVisual, PlacedMaterialItem, PropertyModel, YardMeasurements } from "@/lib/types";
 import type { VirtualBackdrop } from "./VirtualYardBackdrop";
 
 const sceneColors: Record<VirtualBackdrop, { sky: number; ground: number }> = {
@@ -194,13 +194,43 @@ export function createMaterialObject(item: PlacedMaterialItem, yardWidth: number
   return group;
 }
 
+export function createHouseMesh(measurements: YardMeasurements, yardWidth: number, yardLength: number, propertyModel?: PropertyModel) {
+  const houseWidth = Math.min(measurements.houseWidthFt, yardWidth * 0.9);
+  const houseDepth = Math.min(measurements.houseDepthFt, yardLength * 0.45);
+  let houseGeometry: THREE.BufferGeometry;
+  let houseY: number;
+  if (propertyModel?.footprint.length && propertyModel.footprint.length >= 3) {
+    const shape = new THREE.Shape();
+    propertyModel.footprint.forEach((point, index) => {
+      const x = (point.xPct / 100 - 0.5) * houseWidth;
+      const y = (point.yPct / 100 - 0.5) * houseDepth;
+      if (index === 0) shape.moveTo(x, y);
+      else shape.lineTo(x, y);
+    });
+    shape.closePath();
+    houseGeometry = new THREE.ExtrudeGeometry(shape, { depth: Math.max(5.5, propertyModel.heightFt), bevelEnabled: false });
+    houseGeometry.rotateX(-Math.PI / 2);
+    houseY = 0;
+  } else {
+    houseGeometry = new THREE.BoxGeometry(houseWidth, 5.5, houseDepth);
+    houseY = 2.75;
+  }
+  const house = new THREE.Mesh(houseGeometry, new THREE.MeshStandardMaterial({ color: measurements.exteriorColor, roughness: 0.78 }));
+  house.position.set(0, houseY, -yardLength / 2 + houseDepth / 2);
+  house.castShadow = true;
+  house.receiveShadow = true;
+  return house;
+}
+
 export function YardThreeScene({
   placedItems,
   measurements,
+  propertyModel,
   backdrop,
 }: {
   placedItems: PlacedMaterialItem[];
   measurements: YardMeasurements;
+  propertyModel?: PropertyModel;
   backdrop: VirtualBackdrop;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -252,16 +282,7 @@ export function YardThreeScene({
     grid.material.transparent = true;
     scene.add(grid);
 
-    const houseWidth = Math.min(measurements.houseWidthFt, yardWidth * 0.9);
-    const houseDepth = Math.min(measurements.houseDepthFt, yardLength * 0.45);
-    const house = new THREE.Mesh(
-      new THREE.BoxGeometry(houseWidth, 5.5, houseDepth),
-      new THREE.MeshStandardMaterial({ color: measurements.exteriorColor, roughness: 0.78 }),
-    );
-    house.position.set(0, 2.75, -yardLength / 2 + houseDepth / 2);
-    house.castShadow = true;
-    house.receiveShadow = true;
-    scene.add(house);
+    scene.add(createHouseMesh(measurements, yardWidth, yardLength, propertyModel));
 
     for (const item of placedItems) {
       const object = createMaterialObject(item, yardWidth, yardLength);
@@ -304,7 +325,7 @@ export function YardThreeScene({
       renderer.dispose();
       renderer.domElement.remove();
     };
-  }, [backdrop, measurements, placedItems]);
+  }, [backdrop, measurements, placedItems, propertyModel]);
 
   return <div ref={hostRef} className="h-full w-full" data-testid="yard-three-scene" />;
 }
